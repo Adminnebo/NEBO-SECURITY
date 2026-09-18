@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "brand": "NEBO AI - SECURITY",
+  "public_theme_toggle": true,
+  "public_reload_persistence": true,
+  "receiver_320_no_overflow": true,
+  "page_errors": [],
+  "console_note": "Known host-injected inline Cloudflare challenge remains blocked by CSP; no application page errors."
+}
