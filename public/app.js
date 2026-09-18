@@ -117,10 +117,11 @@ async function imagePreview(file) {
 async function pdfPreview(bytes) {
   const pdfjs = await import('./vendor/pdf.mjs');
   pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.mjs', location.href).href;
-  const document = await pdfjs.getDocument({ data: bytes.slice(0),
+  const loadingTask = pdfjs.getDocument({ data: bytes.slice(0),
     standardFontDataUrl: new URL('./vendor/standard_fonts/', location.href).href,
     cMapUrl: new URL('./vendor/cmaps/', location.href).href, cMapPacked: true,
-    wasmUrl: new URL('./vendor/wasm/', location.href).href, isEvalSupported: false }).promise;
+    wasmUrl: new URL('./vendor/wasm/', location.href).href, isEvalSupported: false });
+  const document = await loadingTask.promise;
   try {
     const page = await document.getPage(1); const raw = page.getViewport({ scale: 1 });
     const scale = Math.min(2.5, Math.sqrt(900000 / (raw.width * raw.height)));
@@ -128,7 +129,7 @@ async function pdfPreview(bytes) {
     canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
     const context = canvas.getContext('2d'); context.fillStyle = 'white'; context.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: context, canvas, viewport }).promise; return rgbaFromCanvas(canvas);
-  } finally { await document.destroy(); }
+  } finally { await loadingTask.destroy(); }
 }
 async function textPreview(file) {
   const text = await file.text(); const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 994;
@@ -253,7 +254,7 @@ setupDrop($('sourceDrop'), selectFile); setupDrop($('artDrop'), file => setRecei
 $('encodeButton').addEventListener('click', encode); $('decodeButton').addEventListener('click', decode); document.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', cancelTask));
 $('recordButton').addEventListener('click', startRecording); $('stopRecord').addEventListener('click', () => stopRecording(false)); $('cancelRecord').addEventListener('click', () => stopRecording(true));
 $('textButton').addEventListener('click', () => { $('textEditor').classList.toggle('hidden'); if (!$('textEditor').classList.contains('hidden')) $('textInput').focus(); });
-$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-astra.txt', { type: 'text/plain;charset=utf-8' })); });
+$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-astra.txt', { type: 'text/plain' })); });
 $('demoButton').addEventListener('click', async () => { if (state.busy) return; $('demoButton').disabled = true; errorFor('sender'); try { const response = await fetch(new URL('./assets/documento-ejemplo.pdf', location.href)); if (!response.ok) throw new Error('No se pudo cargar el documento de ejemplo. Puedes seleccionar tu propio archivo.'); const file = new File([await response.blob()], 'documento-ejemplo.pdf', { type: 'application/pdf' }); if (selectFile(file)) await encode(); } catch (error) { errorFor('sender', error.message); } finally { updateButtons(); } });
 document.querySelectorAll('.copy-receiver').forEach(button => button.addEventListener('click', copyReceiverLink));
 document.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault(); }); document.addEventListener('drop', event => event.preventDefault());

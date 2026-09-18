@@ -1,0 +1,14 @@
+{
+  "pageerrors": [],
+  "console_errors": [],
+  "mobile_overflow": false,
+  "pdf_preview_payload_byte_offset": 2702160,
+  "pdf_preview": {
+    "height": 1080,
+    "rgb_sha256": "5f81a3b319277d5c5006540a1e0ece43a5f04058ddcddcbb08bfdc62f4995b05",
+    "width": 834
+  },
+  "pdf_token_bytes": 195974,
+  "text_mime": "text/plain",
+  "text_verified_output": "\u2713 Reconstrucci\u00f3n exacta verificada"
+}
