@@ -1,0 +1,185 @@
+{
+  "status": "PASS",
+  "browser": "Microsoft Edge / Playwright",
+  "base_url": "http://127.0.0.1:8770",
+  "seconds": 24.438,
+  "checks": [
+    {
+      "test": "Python→offline browser: png_alpha",
+      "passed": true,
+      "original_sha256": "29155928dfdf7c37ac25217617ce921d282854449fb6a9ca63a3c18edfe98901",
+      "original_bytes": 2938
+    },
+    {
+      "test": "Browser→Python: png_alpha",
+      "passed": true,
+      "original_sha256": "29155928dfdf7c37ac25217617ce921d282854449fb6a9ca63a3c18edfe98901",
+      "token_bytes": 7897,
+      "independent_exact_rgb_multiset_equality": true,
+      "canonical_source_pixels_hash_matches": true,
+      "browser_artwork_matches_python_artwork": true
+    },
+    {
+      "test": "Independent offline browser sessions: png_alpha",
+      "passed": true
+    },
+    {
+      "test": "Repeated browser encoding: artwork and token file bytes",
+      "passed": true
+    },
+    {
+      "test": "Python→offline browser: pdf_two_pages",
+      "passed": true,
+      "original_sha256": "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
+      "original_bytes": 915
+    },
+    {
+      "test": "Browser→Python: pdf_two_pages",
+      "passed": true,
+      "original_sha256": "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
+      "token_bytes": 19190,
+      "independent_exact_rgb_multiset_equality": true,
+      "canonical_source_pixels_hash_matches": true,
+      "browser_artwork_matches_python_artwork": true
+    },
+    {
+      "test": "Independent offline browser sessions: pdf_two_pages",
+      "passed": true
+    },
+    {
+      "test": "Python→offline browser: wav",
+      "passed": true,
+      "original_sha256": "f2f64e29bb147cc4c2cb7dfd1282cd2bdc3202bad8d4e891dc5d14283d7206d9",
+      "original_bytes": 8044
+    },
+    {
+      "test": "Browser→Python: wav",
+      "passed": true,
+      "original_sha256": "f2f64e29bb147cc4c2cb7dfd1282cd2bdc3202bad8d4e891dc5d14283d7206d9",
+      "token_bytes": 7457,
+      "independent_exact_rgb_multiset_equality": true,
+      "canonical_source_pixels_hash_matches": true,
+      "browser_artwork_matches_python_artwork": true
+    },
+    {
+      "test": "Independent offline browser sessions: wav",
+      "passed": true
+    },
+    {
+      "test": "Python→offline browser: text_utf8",
+      "passed": true,
+      "original_sha256": "a6de8317f35d020e3bd4fb092fab951b593884609288fbe35065bbc501e89b3e",
+      "original_bytes": 80
+    },
+    {
+      "test": "Browser→Python: text_utf8",
+      "passed": true,
+      "original_sha256": "a6de8317f35d020e3bd4fb092fab951b593884609288fbe35065bbc501e89b3e",
+      "token_bytes": 28236,
+      "independent_exact_rgb_multiset_equality": true,
+      "canonical_source_pixels_hash_matches": true,
+      "browser_artwork_matches_python_artwork": true
+    },
+    {
+      "test": "Independent offline browser sessions: text_utf8",
+      "passed": true
+    },
+    {
+      "test": "Changed PNG pixel",
+      "passed": true,
+      "rejected": true,
+      "reason": "La obra no coincide con el token."
+    },
+    {
+      "test": "Stale token checksum",
+      "passed": true,
+      "rejected": true,
+      "reason": "El token fue modificado: checksum incorrecto."
+    },
+    {
+      "test": "Duplicate ranks with valid checksums",
+      "passed": true,
+      "rejected": true,
+      "reason": "La permutacion no es biyectiva."
+    },
+    {
+      "test": "Actual offline recipient UI + original download: png_alpha",
+      "passed": true,
+      "original_sha256": "29155928dfdf7c37ac25217617ce921d282854449fb6a9ca63a3c18edfe98901",
+      "download_filename": "Montaña_café_🗻.png"
+    },
+    {
+      "test": "Actual offline recipient UI + original download: pdf_two_pages",
+      "passed": true,
+      "original_sha256": "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
+      "download_filename": "contrato_dos_páginas.pdf"
+    },
+    {
+      "test": "Actual offline recipient UI + original download: wav",
+      "passed": true,
+      "original_sha256": "f2f64e29bb147cc4c2cb7dfd1282cd2bdc3202bad8d4e891dc5d14283d7206d9",
+      "download_filename": "nota_voz.wav"
+    },
+    {
+      "test": "Actual offline recipient UI + original download: text_utf8",
+      "passed": true,
+      "original_sha256": "a6de8317f35d020e3bd4fb092fab951b593884609288fbe35065bbc501e89b3e",
+      "download_filename": "carta_ñ_签名_🏔.txt"
+    }
+  ],
+  "network_blocked_after_page_and_worker_load": true,
+  "post_cutoff_network_attempts": [],
+  "actual_recipient_ui_tested": true,
+  "recipient_ui_post_cutoff_network_attempts": [],
+  "separate_sender_receiver_contexts": true,
+  "decoder_received_only": [
+    "artwork PNG bytes",
+    "token bytes"
+  ],
+  "fixtures": [
+    {
+      "kind": "png_alpha",
+      "filename": "Montaña_café_🗻.png",
+      "mime": "image/png",
+      "original_bytes": 2938,
+      "original_sha256": "29155928dfdf7c37ac25217617ce921d282854449fb6a9ca63a3c18edfe98901",
+      "pixel_count": 35690,
+      "token_bytes": 7824,
+      "width": 166,
+      "height": 215
+    },
+    {
+      "kind": "pdf_two_pages",
+      "filename": "contrato_dos_páginas.pdf",
+      "mime": "application/pdf",
+      "original_bytes": 915,
+      "original_sha256": "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
+      "pixel_count": 1347720,
+      "token_bytes": 19153,
+      "width": 1021,
+      "height": 1320
+    },
+    {
+      "kind": "wav",
+      "filename": "nota_voz.wav",
+      "mime": "audio/wav",
+      "original_bytes": 8044,
+      "original_sha256": "f2f64e29bb147cc4c2cb7dfd1282cd2bdc3202bad8d4e891dc5d14283d7206d9",
+      "pixel_count": 2714,
+      "token_bytes": 7462,
+      "width": 46,
+      "height": 59
+    },
+    {
+      "kind": "text_utf8",
+      "filename": "carta_ñ_签名_🏔.txt",
+      "mime": "text/plain; charset=utf-8",
+      "original_bytes": 80,
+      "original_sha256": "a6de8317f35d020e3bd4fb092fab951b593884609288fbe35065bbc501e89b3e",
+      "pixel_count": 550288,
+      "token_bytes": 28139,
+      "width": 652,
+      "height": 844
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+node_modules/
+*.tar.gz
+*.zip
+test-results/
+tests/fixtures/

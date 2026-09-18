@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10293a">
+  <meta name="description" content="Transforma un archivo en una obra reversible y recupera el original con su clave. El procesamiento ocurre en tu navegador.">
+  <title>ASTRA · Comparte la obra. Recupera el original.</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="site-header"><div class="header-inner"><a class="brand" href="./" aria-label="ASTRA inicio"><span class="brand-mark" aria-hidden="true">A</span><span>ASTRA<small>TRANSFERENCIA REVERSIBLE</small></span></a><div class="browser-badge"><span></span> Procesado en tu navegador</div><a class="help-link" href="#como-funciona">Cómo funciona <span aria-hidden="true">↗</span></a></div></header>
+  <main>
+    <section class="intro"><div><div class="eyebrow">EL ORIGINAL SIEMPRE VUELVE</div><h1>Comparte la obra.<br><span>Recupera el original.</span></h1><p>Convierte un documento, una imagen o una nota de voz en una obra reversible. Quien reciba la obra y su clave podrá recuperar tu archivo exacto.</p></div><div class="intro-art" aria-hidden="true"><div class="mini-page"><i></i><b></b><b></b><b></b><b></b></div><span>→</span><div class="mini-art"><i></i><b></b></div><span>→</span><div class="mini-page returned"><i></i><b></b><b></b><b></b><b></b><em>✓</em></div></div></section>
+    <nav class="mode-tabs" aria-label="Modo de transferencia"><button id="senderTab" class="mode-tab active" type="button" aria-pressed="true"><span class="tab-icon">↗</span><span>Crear envío<small>Tengo el archivo original</small></span></button><button id="receiverTab" class="mode-tab" type="button" aria-pressed="false"><span class="tab-icon">↙</span><span>Reconstruir recibido<small>Tengo la obra y la clave</small></span></button></nav>
+    <div id="compatibility" class="notice hidden" role="alert"></div>
+    <section id="senderPanel" class="workspace" aria-label="Crear un envío reversible">
+      <div class="input-panel card"><div class="panel-heading"><span class="step-number">01</span><div><h2>Elige lo que quieres compartir</h2><p>El archivo se procesa aquí, en este dispositivo.</p></div></div>
+        <label id="sourceDrop" class="drop-zone" for="sourceFile"><span class="upload-icon" aria-hidden="true">↥</span><strong>Arrastra tu archivo aquí</strong><span>o haz clic para seleccionarlo</span><small>Imágenes, PDF, texto y audio · Hasta 20 MB</small><input id="sourceFile" type="file" accept="image/*,application/pdf,audio/*,text/plain,.txt" class="sr-only"></label>
+        <div id="selectedFile" class="selected-file hidden"></div>
+        <div class="alternative"><span>o crea algo ahora</span></div>
+        <div class="create-options"><button id="recordButton" class="button secondary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg> Grabar nota de voz</button><button id="textButton" class="button secondary" type="button"><span aria-hidden="true">T</span> Escribir texto</button></div>
+        <div id="textEditor" class="text-editor hidden"><label for="textInput">Tu mensaje</label><textarea id="textInput" rows="5" placeholder="Escribe el mensaje que quieres transformar…" maxlength="200000"></textarea><button id="useText" class="text-link" type="button">Usar este texto como archivo →</button></div>
+        <div id="recording" class="recording hidden"><span class="record-dot"></span><strong>Grabando</strong><time id="recordTime">00:00</time><button id="cancelRecord" class="text-link" type="button">Cancelar</button><button id="stopRecord" class="button stop" type="button">Detener</button></div>
+        <div id="senderError" class="error hidden" role="alert"></div>
+        <button id="encodeButton" class="button primary wide" type="button" disabled>Crear obra y clave <span aria-hidden="true">→</span></button>
+        <button id="demoButton" class="demo-button" type="button">Probar con un documento de ejemplo</button>
+        <p class="input-note">Para una conversión ágil en móviles, usa archivos de hasta 5 MB.</p>
+      </div>
+      <div class="output-panel card"><div class="panel-heading"><span class="step-number">02</span><div><h2>Tu envío reversible</h2><p>Dos archivos que viajan juntos.</p></div></div>
+        <div id="senderEmpty" class="output-empty"><div class="empty-grid" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3>Tu obra aparecerá aquí</h3><p>Una nueva disposición de los datos.<br>El mismo archivo al reconstruir.</p><span class="empty-status">Esperando un archivo</span></div>
+        <div id="senderProgress" class="progress-panel hidden" role="status" aria-live="polite"><div class="spinner"></div><h3 id="senderStage">Preparando archivo…</h3><p id="senderProgressText">El procesamiento ocurre en tu navegador.</p><progress id="senderProgressBar" max="100" value="0"></progress><div class="progress-bottom"><span id="senderPercent">0%</span><button class="cancel-task text-link" type="button">Cancelar</button></div></div>
+        <div id="senderResult" class="sender-result hidden"><div class="success-badge">✓ Reconstrucción exacta verificada</div><a id="artworkView" class="artwork-view" target="_blank" rel="noopener"><img id="artworkImage" alt="Obra real generada por la transformación reversible"></a><div id="senderStats" class="result-stats"></div><div class="download-pair"><a id="downloadArt" class="button primary" download><span aria-hidden="true">↓</span> Descargar obra PNG</a><a id="downloadToken" class="button secondary" download><span aria-hidden="true">↓</span> Descargar clave</a></div><p class="pair-note">Envía <strong>ambos archivos</strong>. Adjunta el PNG como documento o archivo, sin comprimir ni editar.</p><button class="copy-receiver button subtle" type="button">Copiar enlace para quien lo recibe ↗</button><details class="technical-detail"><summary>Qué se ha conservado</summary><p>La representación reversible incluye el archivo original completo y, cuando está disponible, una vista previa. La obra y la clave permiten recuperar los mismos bytes del archivo original.</p><p id="senderHash" class="hash"></p></details></div>
+      </div>
+    </section>
+    <section id="receiverPanel" class="workspace hidden" aria-label="Reconstruir un archivo recibido">
+      <div class="input-panel card"><div class="panel-heading"><span class="step-number">01</span><div><h2>Abre lo que recibiste</h2><p>Solo necesitas la obra PNG y su clave.</p></div></div>
+        <label id="artDrop" class="receive-file" for="receivedArt"><span class="file-type" aria-hidden="true">PNG</span><span><strong>Seleccionar obra recibida</strong><small id="receivedArtName">El archivo PNG original, sin editar</small></span><span class="file-plus" aria-hidden="true">+</span><input id="receivedArt" type="file" accept="image/png,.png" class="sr-only"></label>
+        <label id="tokenDrop" class="receive-file" for="receivedToken"><span class="file-type key-type" aria-hidden="true">KEY</span><span><strong>Seleccionar clave recibida</strong><small id="receivedTokenName">Token ASTRA en JSON o TXT</small></span><span class="file-plus" aria-hidden="true">+</span><input id="receivedToken" type="file" accept="application/json,.json,.txt,.token" class="sr-only"></label>
+        <div class="receiver-info"><span aria-hidden="true">↶</span><p>La reconstrucción se hace en este navegador. No necesitas el archivo original ni acceso al dispositivo de quien lo envió.</p></div>
+        <div id="receiverError" class="error hidden" role="alert"></div><button id="decodeButton" class="button primary wide" type="button" disabled>Reconstruir y verificar <span aria-hidden="true">→</span></button><p class="input-note">Compatible con paquetes de dos archivos ASTRA-MSG-V1.</p>
+      </div>
+      <div class="output-panel card"><div class="panel-heading"><span class="step-number">02</span><div><h2>El original, de vuelta</h2><p>Verificamos su integridad con SHA-256.</p></div></div>
+        <div id="receiverEmpty" class="output-empty"><div class="restore-empty-icon" aria-hidden="true">↶</div><h3>Todo vuelve a su lugar</h3><p>Selecciona los dos archivos recibidos<br>para reconstruir el original.</p><span class="empty-status">Esperando la obra y su clave</span></div>
+        <div id="receiverProgress" class="progress-panel hidden" role="status" aria-live="polite"><div class="spinner"></div><h3 id="receiverStage">Leyendo los archivos…</h3><p id="receiverProgressText">Comprobando la obra y su clave.</p><progress id="receiverProgressBar" max="100" value="0"></progress><div class="progress-bottom"><span id="receiverPercent">0%</span><button class="cancel-task text-link" type="button">Cancelar</button></div></div>
+        <div id="receiverResult" class="receiver-result hidden"><div class="success-badge">✓ Original recuperado y verificado</div><div id="restoredFileInfo" class="restored-file-info"></div><div id="restoredPreview" class="restored-preview"></div><a id="downloadRestored" class="button primary wide" download>Descargar archivo original <span aria-hidden="true">↓</span></a><p class="restored-proof">La verificación confirma que el archivo recuperado coincide exactamente con el original.</p><details class="technical-detail"><summary>Ver comprobación de integridad</summary><p id="receiverHash" class="hash"></p></details></div>
+      </div>
+    </section>
+    <section id="como-funciona" class="how-it-works"><div class="section-heading"><div class="eyebrow">UN ENVÍO, DOS PIEZAS</div><h2>Así llega el original a otra persona.</h2></div><div class="steps"><article><span>1</span><div><h3>Crea y descarga</h3><p>Transforma tu archivo. Descarga la obra PNG y la clave de reconstrucción.</p></div></article><article><span>2</span><div><h3>Comparte los dos archivos</h3><p>Usa tu mensajería o correo habitual. Envía el PNG como archivo, sin compresión, junto con la clave.</p></div></article><article><span>3</span><div><h3>Abre, reconstruye y verifica</h3><p>Comparte también el enlace de esta página. Quien lo recibe carga ambas piezas y recupera el original.</p></div></article></div><div class="share-line"><span>El enlace abre la herramienta. Tus archivos se comparten por separado.</span><button class="copy-receiver text-link" type="button">Copiar enlace de recepción ↗</button></div></section>
+    <footer><div class="footer-brand">ASTRA</div><p>Tus archivos se procesan localmente en tu navegador. Esta página no los sube a un servidor.</p><span>Transferencia reversible · SHA-256</span></footer>
+  </main>
+  <div id="toast" class="toast hidden" role="status"></div>
+</body>
+</html>
