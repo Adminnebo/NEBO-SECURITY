@@ -1,0 +1,50 @@
+ASTRA WEB — PRUEBA PRIVADA ENTRE DOS PERSONAS
+
+Emisor:
+https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
+
+Receptor:
+https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir
+
+1. Abre el enlace del emisor. Sube un PDF, imagen o audio, escribe texto o
+   graba una nota de voz. También puedes probar el documento de ejemplo.
+2. Mantén el modo privado. Elige costa, aurora, nebulosa, montaña o una imagen
+   de portada propia. Esa portada será visible para cualquiera que vea el PNG.
+   Elige el formato, el acabado y la resolución 2K/4K que prefieras.
+3. Crea el envío y espera la comprobación de recuperación exacta.
+4. Descarga el PNG y el token cifrado. Guarda también la clave secreta aparte:
+   NO está dentro de esos dos archivos. No la pierdas.
+5. Envía a la otra persona el PNG, el token JSON completo y el enlace del
+   receptor. En WhatsApp, adjunta el PNG como DOCUMENTO/ARCHIVO, sin comprimir.
+   Comparte la clave secreta mediante otro canal protegido.
+6. El receptor selecciona el PNG y el token, pega la clave secreta o carga su
+   archivo .key.txt, y pulsa reconstruir. Puede descargar el archivo original
+   completo. No necesita el original ni la computadora del emisor.
+7. Para comprobar independencia de la red, carga primero la página y espera
+   que terminen de cargar sus motores. Después desconéctala de Internet y
+   selecciona los tres elementos. La recuperación funciona en el navegador.
+
+El enlace es público. Los documentos no se suben a un servidor mediante
+esta aplicación. Solo se transfieren si tú compartes los archivos generados.
+La recuperación no necesita tu computadora ni Python.
+
+El modo privado cifra con AES-256-GCM. El token por sí solo no basta para abrir
+el paquete. La clave secreta es aleatoria de 256 bits, no una contraseña corta.
+No hay una clave maestra del servidor para recuperar una clave perdida.
+
+También puedes enviar a una identidad verificada del receptor: él crea una
+identidad en su navegador y te comparte únicamente su identidad pública. Tú
+la importas y verificas su huella por otro canal. Así recibe PNG + token, pero
+su navegador ya conserva la clave privada necesaria. Esa clave privada no se
+puede exportar: borrar los datos del sitio puede perder acceso a sus mensajes.
+
+El modo privado transporta datos cifrados en una portada. No es una permutación
+de los píxeles del documento. El modo clásico sigue disponible sin cifrado y
+acepta los paquetes anteriores. Ampliar una portada pequeña a 4K aumenta las
+dimensiones, no el detalle nativo.
+
+Cada archivo de entrada puede ocupar hasta 20 MiB; para la primera prueba
+en un teléfono se recomienda un archivo pequeño.
+
+La aplicación está publicada en alojamiento web; no utiliza un túnel
+temporal hacia tu computadora.

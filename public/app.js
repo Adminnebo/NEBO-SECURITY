@@ -1,10 +1,13 @@
 'use strict';
+import { loadIdentity, createIdentity, exportPublicIdentity, clearIdentity, loadRecipientBundle, fingerprintPublicBundle } from './identity-store.js';
 
 const $ = id => document.getElementById(id);
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const state = { file: null, sourceURL: null, urls: [], worker: null, nextId: 1,
+const state = { file: null, sourceURL: null, urls: [], workers: { classic: null, secure: null }, workerReady: new Set(), nextId: 1,
   pending: null, busy: false, activeMode: 'sender', recording: null,
-  preparingMicrophone: false, receivedArt: null, receivedToken: null, target: null, taskSerial: 0 };
+  preparingMicrophone: false, receivedArt: null, receivedToken: null, target: null, taskSerial: 0,
+  cover: 'mountain', coverFile: null, coverURL: null, identity: null, recipient: null,
+  tokenFormat: null, tokenMode: null, secretURL: null, coverVersion: 0 };
 const el = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
 const formatBytes = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(2)} MB`;
 const formatNumber = value => Number(value).toLocaleString('es-DO');
@@ -24,9 +27,13 @@ function setMode(mode) {
   const url = new URL(location.href); if (receiving) url.searchParams.set('modo', 'recibir'); else url.searchParams.delete('modo'); history.replaceState({}, '', url);
 }
 function updateButtons() {
-  $('encodeButton').disabled = state.busy || !state.file || Boolean(state.recording) || state.preparingMicrophone;
+  const privateMode = $('encodingMode').value === 'private';
+  const needsRecipient = privateMode && document.querySelector('input[name=accessMode]:checked').value === 'recipient';
+  $('encodeButton').disabled = state.busy || !state.file || Boolean(state.recording) || state.preparingMicrophone || needsRecipient && (!state.recipient || !$('recipientVerified').checked);
   $('decodeButton').disabled = state.busy || !state.receivedArt || !state.receivedToken;
-  for (const id of ['sourceFile', 'receivedArt', 'receivedToken', 'recordButton', 'demoButton', 'textButton', 'useText']) $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  for (const id of ['sourceFile', 'receivedArt', 'receivedToken', 'recordButton', 'demoButton', 'textButton', 'useText', 'encodingMode', 'coverFile', 'coverFormat', 'coverResolution', 'coverStyle', 'recipientFile', 'recipientVerified', 'createIdentity', 'clearIdentity']) $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  document.querySelectorAll('.cover-choice,input[name=accessMode]').forEach(node => { node.disabled = state.busy; });
+  $('useSourceCover').disabled = state.busy || !state.file?.type.startsWith('image/');
   $('recordButton').disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
 }
 function progress(mode, percent, message) {
@@ -44,20 +51,20 @@ function endTask(mode, failed = false) {
   state.busy = false; $(mode + 'Progress').classList.add('hidden');
   if (failed) $(mode + 'Empty').classList.remove('hidden'); updateButtons();
 }
-function startWorker() {
+function startWorker(engine) {
   try {
-    const worker = new Worker(new URL('./codec-worker.js', location.href), { type: 'module' }); state.worker = worker;
+    const worker = new Worker(new URL(engine === 'secure' ? './secure-worker.js' : './codec-worker.js', location.href), { type: 'module' }); state.workers[engine] = worker;
     worker.onmessage = event => {
       const data = event.data || {};
-      if (data.type === 'ready') { document.body.dataset.workerReady = 'true'; resolveWorkerReady(true); return; }
+      if (data.type === 'ready') { state.workerReady.add(engine); document.body.dataset[engine + 'WorkerReady'] = 'true'; if (state.workerReady.size === 2) { document.body.dataset.workerReady = 'true'; resolveWorkerReady(true); } return; }
       const job = state.pending; if (!job || String(data.id) !== String(job.id)) return;
       if (data.type === 'progress') { progress(job.mode, data.percent ?? data.progress, data.message); return; }
       if (data.type === 'result') { state.pending = null; job.resolve(data); }
-      else if (data.type === 'error') { state.pending = null; job.reject(new Error(data.message || data.error || 'No se pudo completar la operación.')); }
+      else if (data.type === 'error') { state.pending = null; const error = new Error(data.message || data.error || 'No se pudo completar la operación.'); Object.assign(error, { code: data.code, required: data.required_ciphertext_bytes, capacity: data.max_ciphertext_bytes }); job.reject(error); }
     };
     worker.onerror = event => {
       const message = event.message || 'No se pudo cargar el motor de conversión. Recarga la página y vuelve a intentarlo.';
-      if (state.pending) { const job = state.pending; state.pending = null; job.reject(new Error(message)); }
+      if (state.pending?.engine === engine) { const job = state.pending; state.pending = null; job.reject(new Error(message)); }
       rejectWorkerReady(new Error(message));
       $('compatibility').textContent = 'No se pudo cargar el motor de conversión. Recarga la página cuando tengas conexión.'; $('compatibility').classList.remove('hidden');
     };
@@ -65,28 +72,32 @@ function startWorker() {
     rejectWorkerReady(error); $('compatibility').textContent = 'Abre esta página mediante HTTPS en un navegador actualizado para usar la conversión local.'; $('compatibility').classList.remove('hidden');
   }
 }
-function runWorker(action, data, mode) {
-  if (!state.worker) startWorker();
-  if (!state.worker) return Promise.reject(new Error('El motor de conversión no está disponible.'));
+function runWorker(action, data, mode, engine = 'classic') {
+  if (!state.workers[engine]) startWorker(engine);
+  if (!state.workers[engine]) return Promise.reject(new Error('El motor de conversión no está disponible.'));
   return new Promise((resolve, reject) => {
-    const id = state.nextId++; state.pending = { id, resolve, reject, mode };
+    const id = state.nextId++; state.pending = { id, resolve, reject, mode, engine };
     const transfer = []; for (const key of ['file', 'artwork', 'token']) if (data[key] instanceof ArrayBuffer) transfer.push(data[key]);
     if (data.preview?.data instanceof ArrayBuffer) transfer.push(data.preview.data);
+    if (data.cover?.data instanceof ArrayBuffer) transfer.push(data.cover.data);
     // The cached target remains reusable; do not transfer/detach its buffer.
-    state.worker.postMessage({ id, action, ...data }, transfer);
+    state.workers[engine].postMessage({ id, action, ...data }, transfer);
   });
 }
 function cancelTask() {
   if (!state.busy) return;
   state.taskSerial++;
   const mode = state.pending?.mode || state.activeMode;
+  const engine = state.pending?.engine;
   if (state.pending) { state.pending.reject(new Error('Operación cancelada. Puedes volver a intentarlo.')); state.pending = null; }
-  state.worker?.terminate(); state.worker = null; startWorker(); endTask(mode, true); toast('Operación cancelada.');
+  if (engine) { state.workers[engine]?.terminate(); state.workers[engine] = null; state.workerReady.delete(engine); startWorker(engine); }
+  endTask(mode, true); toast('Operación cancelada.');
 }
 function clearFile() {
   if (state.busy || state.recording) return;
   if (state.sourceURL) URL.revokeObjectURL(state.sourceURL); state.sourceURL = null; state.file = null;
   $('sourceFile').value = ''; $('selectedFile').replaceChildren(); $('selectedFile').classList.add('hidden'); updateButtons();
+  if (state.cover === 'source') chooseCover('mountain');
 }
 function selectFile(file) {
   if (!file || state.busy || state.recording) return false;
@@ -104,6 +115,72 @@ function selectFile(file) {
 }
 function scaledDimensions(width, height, maxPixels = 900000) { const scale = Math.min(1, Math.sqrt(maxPixels / (width * height))); return [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]; }
 function rgbaFromCanvas(canvas) { return { width: canvas.width, height: canvas.height, channels: 4, data: canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data.buffer }; }
+function coverDimensions() {
+  const edge = Number($('coverResolution').value), format = $('coverFormat').value;
+  return format === 'square' ? [edge, edge] : format === 'portrait' ? [Math.round(edge * 2 / 3), edge] : [edge, Math.round(edge * 2 / 3)];
+}
+function describeCover() {
+  const [width, height] = coverDimensions(), image = $('coverReference');
+  $('coverDimensions').textContent = `${formatNumber(width)} × ${formatNumber(height)} píxeles de salida`;
+  if (image.naturalWidth) {
+    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+    $('coverScaleNote').textContent = `Referencia: ${formatNumber(image.naturalWidth)} × ${formatNumber(image.naturalHeight)}. ${scale > 1.001 ? 'La imagen se amplía; el tamaño de salida no añade detalle nativo.' : 'Se ajusta y recorta al formato elegido.'}`;
+  }
+  image.dataset.style = $('coverStyle').value;
+}
+function chooseCover(kind, file = null) {
+  if (state.busy) return;
+  if (state.coverURL) { URL.revokeObjectURL(state.coverURL); state.coverURL = null; }
+  state.cover = kind; state.coverFile = file; state.coverVersion++;
+  document.querySelectorAll('.cover-choice').forEach(button => { const selected = button.dataset.cover === kind; button.classList.toggle('selected', selected); button.setAttribute('aria-pressed', String(selected)); });
+  const custom = kind === 'custom' || kind === 'source'; const info = $('customCoverInfo'); info.replaceChildren(); info.classList.toggle('hidden', !custom);
+  if (custom) {
+    const selectedFile = kind === 'source' ? state.file : file;
+    if (!selectedFile) return;
+    state.coverURL = URL.createObjectURL(selectedFile); $('coverReference').src = state.coverURL;
+    info.append(el('strong', '', kind === 'source' ? 'La imagen del mensaje será la portada visible.' : 'Portada personalizada visible.'), el('span', '', selectedFile.name));
+  } else $('coverReference').src = new URL(`./assets/${kind}.png`, location.href).href;
+  describeCover();
+}
+async function prepareCover() {
+  let blob;
+  if (state.cover === 'custom') blob = state.coverFile;
+  else if (state.cover === 'source') blob = state.file;
+  else { const response = await fetch(new URL(`./assets/${state.cover}.png`, location.href)); if (!response.ok) throw new Error('No se pudo cargar esta portada. Elige otra imagen o sube una propia.'); blob = await response.blob(); }
+  if (!blob) throw new Error('Selecciona una imagen de portada.');
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const [width, height] = coverDimensions(); const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d', { willReadFrequently: true }); context.fillStyle = '#ffffff'; context.fillRect(0, 0, width, height);
+    context.filter = $('coverStyle').value === 'vivid' ? 'saturate(1.22) contrast(1.06)' : $('coverStyle').value === 'cinematic' ? 'saturate(0.88) contrast(1.14) sepia(0.08)' : 'none';
+    const scale = Math.max(width / bitmap.width, height / bitmap.height), drawnWidth = bitmap.width * scale, drawnHeight = bitmap.height * scale;
+    context.drawImage(bitmap, (width - drawnWidth) / 2, (height - drawnHeight) / 2, drawnWidth, drawnHeight); context.filter = 'none';
+    return rgbaFromCanvas(canvas);
+  } finally { bitmap.close(); }
+}
+function updateEncodingMode() {
+  const privateMode = $('encodingMode').value === 'private';
+  $('coverControls').classList.toggle('hidden', !privateMode); $('protectionControls').classList.toggle('hidden', !privateMode);
+  $('modeExplanation').textContent = privateMode ? 'Una portada a color transporta el archivo cifrado. Para recuperarlo hacen falta la obra, el token y la clave secreta o la identidad destinataria.' : 'Reorganiza los píxeles de una representación del archivo y conserva su paleta. La obra y el token permiten recuperarlo sin una clave secreta. Este modo no cifra el contenido.';
+  $('encodeButton').replaceChildren(document.createTextNode(privateMode ? 'Crear envío privado' : 'Crear permutación clásica'), el('span', '', '→'));
+  $('senderOutputSubtitle').textContent = privateMode ? 'Obra y token. El acceso se comparte por separado.' : 'Obra y token. Permutación clásica sin cifrado.';
+  $('senderResult').classList.add('hidden'); $('senderEmpty').classList.remove('hidden'); updateButtons();
+}
+async function refreshIdentity() {
+  try { state.identity = await loadIdentity(); }
+  catch (error) { state.identity = null; $('identityStatus').textContent = `No se pudo acceder al almacenamiento de identidad: ${error.message}`; return; }
+  const exists = Boolean(state.identity); $('createIdentity').classList.toggle('hidden', exists); $('exportIdentity').classList.toggle('hidden', !exists); $('clearIdentity').classList.toggle('hidden', !exists); $('identityFingerprint').classList.toggle('hidden', !exists);
+  $('identityStatus').textContent = exists ? 'Identidad local lista. La clave privada permanece en este navegador.' : 'No hay una identidad de recepción guardada.';
+  if (exists) $('identityFingerprint').textContent = await fingerprintPublicBundle(state.identity.publicBundle);
+  updateReceiverAccess();
+}
+function updateReceiverAccess() {
+  const privateMode = state.tokenFormat === 'ASTRA-SECURE-V2'; $('receiverAccess').classList.toggle('hidden', !state.tokenFormat);
+  $('receiverFormatLabel').textContent = privateMode ? 'Envío privado cifrado · ASTRA-SECURE-V2' : state.tokenFormat === 'ASTRA-MSG-V1' ? 'Permutación clásica sin cifrado · ASTRA-MSG-V1' : 'Formato pendiente de validación';
+  const recipientMode = privateMode && state.tokenMode === 'recipient';
+  $('receiverSecretFields').classList.toggle('hidden', !privateMode || recipientMode); $('receiverIdentityInfo').classList.toggle('hidden', !recipientMode);
+  if (recipientMode) $('receiverIdentityInfo').textContent = state.identity ? 'Se usará la identidad privada guardada en este navegador. Solo una identidad coincidente puede abrir el envío.' : 'Este envío requiere la identidad destinataria que ya existía al enviarlo. Abre esta página en el navegador donde guardaste esa identidad; crear otra no recupera la anterior.';
+}
 async function loadTarget() {
   if (state.target) return state.target;
   const response = await fetch(new URL('./assets/mountain.png', location.href)); if (!response.ok) throw new Error('No se pudo cargar la referencia del paisaje. Recarga la página con conexión.');
@@ -156,35 +233,57 @@ async function preparePreview(file, bytes) {
 function downloadName(name) { return name.replace(/\.[^.]+$/, '').replace(/[^\p{L}\p{N}._-]+/gu, '-').slice(0, 80) || 'archivo'; }
 async function encode() {
   if (!state.file || state.busy || state.recording) return;
+  const privateMode = $('encodingMode').value === 'private'; const accessMode = document.querySelector('input[name=accessMode]:checked').value;
+  if (privateMode && accessMode === 'recipient' && (!state.recipient || !$('recipientVerified').checked)) { errorFor('sender', 'Carga la identidad pública y confirma su huella por otro canal.'); return; }
   const file = state.file; const serial = beginTask('sender');
   try {
-    const bytes = await file.arrayBuffer(); progress('sender', 3, 'Preparando una vista del original…');
-    let preview;
-    try { preview = await preparePreview(file, bytes); } catch (error) {
-      // A preview is optional: preserve and encode the complete original bytes.
-      $('senderProgressText').textContent = 'La vista previa no está disponible. Conservaremos el archivo original completo.';
+    const bytes = await file.arrayBuffer(); let result;
+    if (privateMode) {
+      progress('sender', 3, 'Preparando la portada de alta resolución…');
+      const cover = await prepareCover(); if (state.taskSerial !== serial) return;
+      result = await runWorker('encode', { file: bytes, name: file.name, mime: file.type || 'application/octet-stream', cover, ...(accessMode === 'recipient' ? { recipient: state.recipient } : {}) }, 'sender', 'secure');
+    } else {
+      progress('sender', 3, 'Preparando una vista del original…'); let preview;
+      try { preview = await preparePreview(file, bytes); } catch (error) { $('senderProgressText').textContent = 'La vista previa no está disponible. Conservaremos el archivo original completo.'; }
+      if (state.taskSerial !== serial) return;
+      const target = await loadTarget(); if (state.taskSerial !== serial) return;
+      result = await runWorker('encode', { file: bytes, name: file.name, mime: file.type || 'application/octet-stream', preview, target }, 'sender', 'classic');
     }
-    if (state.taskSerial !== serial) return;
-    const target = await loadTarget(); if (state.taskSerial !== serial) return;
-    const result = await runWorker('encode', { file: bytes, name: file.name, mime: file.type || 'application/octet-stream', preview, target }, 'sender');
     if (result.exact_file_recovery !== true) throw new Error('La conversión no confirmó la recuperación exacta del archivo. No se mostrará como verificada.');
     const art = new Blob([result.artwork], { type: 'image/png' }); const token = new Blob([result.token], { type: 'application/json' });
-    const artURL = objectURL(art); const tokenURL = objectURL(token); const base = downloadName(file.name);
+    const artURL = objectURL(art); const tokenURL = objectURL(token); const base = privateMode ? 'ASTRA-envio-privado' : downloadName(file.name);
     $('artworkImage').src = artURL; $('artworkView').href = artURL;
     $('downloadArt').href = artURL; $('downloadArt').download = `${base}-ASTRA-obra.png`;
-    $('downloadToken').href = tokenURL; $('downloadToken').download = `${base}-ASTRA-clave.json`;
-    $('senderStats').replaceChildren(el('span', '', `${result.width} × ${result.height}`), el('span', '', `Clave: ${formatBytes(result.token_bytes ?? token.size)}`), el('span', '', `${formatNumber(result.pixel_count)} píxeles`));
+    $('downloadToken').href = tokenURL; $('downloadToken').download = `${base}-ASTRA-token.json`;
+    $('artworkCaption').textContent = privateMode ? 'Imagen portadora con datos cifrados; utiliza colores de referencia. No es una permutación del documento.' : 'Permutación clásica de la representación del archivo. Conserva sus píxeles y su paleta; no cifra el contenido.';
+    $('senderStats').replaceChildren(el('span', '', `${result.width} × ${result.height}`), el('span', '', `Token: ${formatBytes(result.token_bytes ?? token.size)}`), el('span', '', `${formatNumber(result.pixel_count)} píxeles`));
+    if (privateMode) $('senderStats').append(el('span', '', `${result.bits_per_channel ?? result.bits} bits por canal`));
+    $('secretResult').classList.add('hidden'); $('recipientResult').classList.add('hidden'); $('recoverySecret').value = '';
+    if (state.secretURL) { URL.revokeObjectURL(state.secretURL); state.secretURL = null; }
+    if (privateMode && result.recovery_secret) {
+      $('recoverySecret').value = result.recovery_secret; $('recoverySecret').type = 'password'; $('showSecret').textContent = 'Mostrar'; $('showSecret').setAttribute('aria-pressed', 'false');
+      state.secretURL = objectURL(new Blob([result.recovery_secret + '\n'], { type: 'text/plain' })); $('downloadSecret').href = state.secretURL; $('downloadSecret').download = 'ASTRA-clave-secreta.key.txt'; $('secretResult').classList.remove('hidden');
+    } else if (privateMode) {
+      $('recipientResult').replaceChildren(el('strong', '', 'Protegido para la identidad destinataria'), el('code', 'fingerprint', await fingerprintPublicBundle(state.recipient))); $('recipientResult').classList.remove('hidden');
+    }
+    $('conservationExplanation').textContent = privateMode ? 'El archivo original, su nombre y sus metadatos de recuperación se cifran con AES-256-GCM. Los datos cifrados se insertan en los bits menos significativos de la portada visible. El token permite localizar y autenticar el contenido; requiere además la clave secreta o la identidad privada destinataria.' : 'La representación reversible incluye el archivo original completo y, cuando está disponible, una vista previa. Una permutación conserva todos los píxeles de esa representación. La obra y el token bastan para recuperar el original; no hay cifrado.';
     $('senderHash').textContent = `SHA-256 del archivo original: ${result.source_sha256}`;
     $('senderResult').classList.remove('hidden'); endTask('sender');
     if (window.innerWidth < 710) $('senderResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (error) { if (state.taskSerial === serial) { errorFor('sender', error.message || String(error)); endTask('sender', true); } }
+  } catch (error) { if (state.taskSerial === serial) { errorFor('sender', error.code === 'CAPACITY' ? `El archivo no cabe en la portada elegida${error.capacity ? ` (capacidad: ${formatBytes(error.capacity)})` : ''}. Selecciona una resolución mayor; para los archivos más grandes usa Cuadrado · 4096 px.` : error.message || String(error)); endTask('sender', true); } }
 }
-function setReceived(kind, file) {
+async function setReceived(kind, file) {
   if (!file || state.busy) return;
   const artwork = kind === 'art'; if (file.size > (artwork ? 180 : 80) * 1048576) { errorFor('receiver', 'Este archivo supera el tamaño admitido para la reconstrucción en el navegador.'); return; }
   state[artwork ? 'receivedArt' : 'receivedToken'] = file;
   $(artwork ? 'receivedArtName' : 'receivedTokenName').textContent = `${file.name} · ${formatBytes(file.size)}`;
-  $(artwork ? 'artDrop' : 'tokenDrop').classList.add('selected'); $(artwork ? 'artDrop' : 'tokenDrop').querySelector('.file-plus').textContent = '✓'; errorFor('receiver'); updateButtons();
+  $(artwork ? 'artDrop' : 'tokenDrop').classList.add('selected'); $(artwork ? 'artDrop' : 'tokenDrop').querySelector('.file-plus').textContent = '✓'; errorFor('receiver');
+  if (!artwork) {
+    try { const token = JSON.parse(await file.text()); if (state.receivedToken !== file) return; state.tokenFormat = token.format; state.tokenMode = token.mode; }
+    catch (_) { state.tokenFormat = null; state.tokenMode = null; errorFor('receiver', 'No se pudo leer el token como JSON. Selecciona el archivo original que acompaña al PNG.'); }
+    updateReceiverAccess();
+  }
+  updateButtons();
 }
 async function decode() {
   if (state.busy || !state.receivedArt || !state.receivedToken) return;
@@ -192,7 +291,16 @@ async function decode() {
   try {
     const [artwork, token] = await Promise.all([state.receivedArt.arrayBuffer(), state.receivedToken.arrayBuffer()]);
     if (state.taskSerial !== serial) return;
-    const result = await runWorker('decode', { artwork, token }, 'receiver');
+    const header = JSON.parse(new TextDecoder().decode(token)); const privateMode = header.format === 'ASTRA-SECURE-V2';
+    let access = {};
+    if (privateMode && header.mode === 'recipient') {
+      state.identity = await loadIdentity();
+      if (!state.identity) throw new Error('Este envío requiere la identidad privada destinataria. Ábrelo en el navegador donde guardaste esa identidad.');
+      access = { privateKey: state.identity.privateKey, recipientPublic: state.identity.publicBundle };
+    } else if (privateMode) {
+      const secret = $('receivedSecret').value.trim(); if (!secret) throw new Error('Pega la clave secreta que recibiste por separado. La obra y el token no bastan para abrir este envío privado.'); access = { secret };
+    }
+    const result = await runWorker('decode', { artwork, token, ...access }, 'receiver', privateMode ? 'secure' : 'classic');
     if (result.exact_file_recovery !== true) throw new Error('La clave y la obra no confirmaron una recuperación exacta.');
     const file = new Blob([result.file], { type: result.mime || 'application/octet-stream' }); const url = objectURL(file);
     const name = result.name || result.filename || 'archivo-recuperado'; $('downloadRestored').href = url; $('downloadRestored').download = name;
@@ -206,13 +314,22 @@ async function showRestored(blob, url, name) {
   const preview = $('restoredPreview'); preview.replaceChildren(); const mime = blob.type;
   if (mime.startsWith('image/')) { const image = el('img'); image.src = url; image.alt = 'Imagen original recuperada'; preview.append(image); }
   else if (mime.startsWith('audio/')) { const audio = el('audio'); audio.controls = true; audio.src = url; preview.append(audio); }
-  else if (mime === 'application/pdf' || /\.pdf$/i.test(name)) { const frame = el('iframe'); frame.src = url; frame.title = 'Documento PDF original recuperado'; preview.append(frame); }
+  else if (mime === 'application/pdf') {
+    // Recovered documents are untrusted. Never execute them in a same-origin
+    // iframe, including a file whose authenticated name merely ends in .pdf.
+    const card = el('div', 'pdf-safe-card'); card.append(el('span', 'file-type', 'PDF'), el('strong', '', 'Documento original recuperado'), el('p', '', 'El archivo se ha verificado. Descárgalo para abrirlo en tu visor de documentos.')); preview.append(card);
+  }
   else if (mime.startsWith('text/') || /\.txt$/i.test(name)) { const text = await blob.slice(0, 200000).text(); preview.append(el('pre', '', text)); }
 }
 async function copyReceiverLink() {
   const url = new URL(location.href); url.search = ''; url.hash = ''; url.searchParams.set('modo', 'recibir');
   try { await navigator.clipboard.writeText(url.href); toast('Enlace de recepción copiado. Comparte la obra y la clave por separado.'); }
   catch (_) { const input = el('textarea'); input.value = url.href; document.body.append(input); input.select(); const copied = document.execCommand('copy'); input.remove(); toast(copied ? 'Enlace de recepción copiado.' : `Enlace para recibir: ${url.href}`); }
+}
+async function copySecret() {
+  const secret = $('recoverySecret').value; if (!secret) return;
+  try { await navigator.clipboard.writeText(secret); toast('Clave copiada. Compártela por un canal distinto.'); }
+  catch (_) { toast('No se pudo copiar automáticamente. Usa Mostrar y selecciona la clave.'); }
 }
 function wavFile(record) {
   const count = record.chunks.reduce((sum, chunk) => sum + chunk.length, 0); const bytes = new ArrayBuffer(44 + count * 2); const view = new DataView(bytes);
@@ -257,8 +374,29 @@ $('textButton').addEventListener('click', () => { $('textEditor').classList.togg
 $('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-astra.txt', { type: 'text/plain' })); });
 $('demoButton').addEventListener('click', async () => { if (state.busy) return; $('demoButton').disabled = true; errorFor('sender'); try { const response = await fetch(new URL('./assets/documento-ejemplo.pdf', location.href)); if (!response.ok) throw new Error('No se pudo cargar el documento de ejemplo. Puedes seleccionar tu propio archivo.'); const file = new File([await response.blob()], 'documento-ejemplo.pdf', { type: 'application/pdf' }); if (selectFile(file)) await encode(); } catch (error) { errorFor('sender', error.message); } finally { updateButtons(); } });
 document.querySelectorAll('.copy-receiver').forEach(button => button.addEventListener('click', copyReceiverLink));
+document.querySelectorAll('.cover-choice').forEach(button => button.addEventListener('click', () => chooseCover(button.dataset.cover)));
+$('encodingMode').addEventListener('change', updateEncodingMode);
+$('coverReference').addEventListener('load', describeCover);
+$('coverReference').addEventListener('error', () => { $('coverScaleNote').textContent = 'No se pudo cargar la referencia. Selecciona otra portada o sube una imagen.'; });
+$('coverFormat').addEventListener('change', () => { const square = $('coverFormat').value === 'square'; $('coverResolution').querySelector('option[value="4096"]').disabled = !square; if (!square && $('coverResolution').value === '4096') $('coverResolution').value = '3840'; describeCover(); });
+$('coverResolution').addEventListener('change', describeCover); $('coverStyle').addEventListener('change', describeCover);
+$('coverFile').addEventListener('change', () => { const file = $('coverFile').files[0]; if (!file) return; if (!file.type.startsWith('image/') || file.size > MAX_FILE_BYTES) { errorFor('sender', 'Selecciona una imagen de portada de hasta 20 MB.'); return; } chooseCover('custom', file); });
+$('useSourceCover').addEventListener('click', () => { if (state.file?.type.startsWith('image/')) chooseCover('source'); });
+document.querySelectorAll('input[name=accessMode]').forEach(input => input.addEventListener('change', () => { $('recipientControls').classList.toggle('hidden', document.querySelector('input[name=accessMode]:checked').value !== 'recipient'); updateButtons(); }));
+$('recipientFile').addEventListener('change', async () => {
+  state.recipient = null; $('recipientVerified').checked = false; $('recipientSummary').classList.add('hidden'); updateButtons(); const file = $('recipientFile').files[0]; if (!file) return;
+  try { state.recipient = await loadRecipientBundle(file); $('recipientFingerprint').textContent = await fingerprintPublicBundle(state.recipient); $('recipientSummary').classList.remove('hidden'); errorFor('sender'); }
+  catch (error) { errorFor('sender', error.message); } updateButtons();
+});
+$('recipientVerified').addEventListener('change', updateButtons);
+$('showSecret').addEventListener('click', () => { const show = $('recoverySecret').type === 'password'; $('recoverySecret').type = show ? 'text' : 'password'; $('showSecret').textContent = show ? 'Ocultar' : 'Mostrar'; $('showSecret').setAttribute('aria-pressed', String(show)); });
+$('copySecret').addEventListener('click', copySecret);
+$('receivedSecretFile').addEventListener('change', async () => { const file = $('receivedSecretFile').files[0]; if (!file) return; if (file.size > 2048) { errorFor('receiver', 'Este archivo no parece una clave secreta ASTRA. Selecciona el archivo .key.txt que recibiste.'); return; } const secret = (await file.text()).trim(); if (!/^[A-Za-z0-9_-]{43}$/.test(secret)) { errorFor('receiver', 'La clave debe contener los 43 caracteres de la clave secreta ASTRA.'); return; } $('receivedSecret').value = secret; errorFor('receiver'); toast('Clave secreta cargada en este navegador.'); });
+$('createIdentity').addEventListener('click', async () => { $('createIdentity').disabled = true; try { state.identity = await createIdentity(); await refreshIdentity(); toast('Identidad creada. Descarga su archivo público para compartirlo.'); } catch (error) { $('identityStatus').textContent = error.message; } finally { updateButtons(); } });
+$('exportIdentity').addEventListener('click', async () => { try { const json = await exportPublicIdentity(state.identity); const link = el('a'); link.href = objectURL(new Blob([json], { type: 'application/json' })); link.download = 'ASTRA-identidad-publica.json'; document.body.append(link); link.click(); link.remove(); } catch (error) { $('identityStatus').textContent = error.message; } });
+$('clearIdentity').addEventListener('click', async () => { if (!window.confirm('Si eliminas esta identidad, no podrás abrir los envíos dirigidos a ella. ¿Eliminar identidad de este navegador?')) return; try { await clearIdentity(); await refreshIdentity(); toast('Identidad local eliminada.'); } catch (error) { $('identityStatus').textContent = error.message; } });
 document.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault(); }); document.addEventListener('drop', event => event.preventDefault());
 window.addEventListener('beforeunload', () => { state.recording?.stream.getTracks().forEach(track => track.stop()); });
-setMode(new URLSearchParams(location.search).get('modo') === 'recibir' ? 'receiver' : 'sender'); updateButtons();
+setMode(new URLSearchParams(location.search).get('modo') === 'recibir' ? 'receiver' : 'sender'); updateEncodingMode(); describeCover();
 if (!window.Worker || !window.crypto?.subtle) { $('compatibility').textContent = 'Usa un navegador actualizado y abre esta página mediante HTTPS para procesar y verificar archivos localmente.'; $('compatibility').classList.remove('hidden'); }
-startWorker();
+startWorker('classic'); startWorker('secure'); refreshIdentity();

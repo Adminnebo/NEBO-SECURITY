@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "url": "http://127.0.0.1:8770",
+  "browser": "Microsoft Edge / Playwright",
+  "microphone_source": "Synthetic 440 Hz WAV through Chromium fake-device flags; no real microphone",
+  "default_mode": "ASTRA-SECURE-V2 / secret",
+  "recording_wait_ms": 1500,
+  "original_file_bytes": 131116,
+  "sample_rate_hz": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "frames": 65536,
+  "duration_seconds": 1.3653333333333333,
+  "nonzero_samples": 64571,
+  "source_sha256": "d196940d6f5dd6a9d437ca8c018ce7162abb6acbf8cfe635171c9ba07eaab01b",
+  "artwork_bytes": 8388628,
+  "token_bytes": 453,
+  "separate_key_file_bytes": 44,
+  "secret_characters": 43,
+  "secret_saved_in_report": false,
+  "secret_absent_from_token": true,
+  "original_name_absent_from_token": true,
+  "original_hash_absent_from_token": true,
+  "missing_secret_blocked_in_ui": true,
+  "download_names": {
+    "artwork": "ASTRA-envio-privado-ASTRA-obra.png",
+    "token": "ASTRA-envio-privado-ASTRA-token.json",
+    "separate_key": "ASTRA-clave-secreta.key.txt"
+  },
+  "recipients": [
+    {
+      "access": "paste",
+      "byte_identical": true,
+      "sha256": "d196940d6f5dd6a9d437ca8c018ce7162abb6acbf8cfe635171c9ba07eaab01b",
+      "separate_context": true,
+      "offline_before_import": true,
+      "http_requests_during_recovery": 0
+    },
+    {
+      "access": "key_file_import",
+      "byte_identical": true,
+      "sha256": "d196940d6f5dd6a9d437ca8c018ce7162abb6acbf8cfe635171c9ba07eaab01b",
+      "separate_context": true,
+      "offline_before_import": true,
+      "http_requests_during_recovery": 0
+    }
+  ],
+  "page_errors": [],
+  "seconds": 20.451
+}

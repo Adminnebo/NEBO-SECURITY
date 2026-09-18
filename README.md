@@ -1,41 +1,85 @@
-# ASTRA Web: enviar una obra y reconstruir el archivo
+# ASTRA Web — imágenes privadas y recuperación exacta
 
-Aplicación estática en español. El procesamiento se ejecuta en un Web Worker del navegador. No tiene API que reciba el archivo original, base de datos, servicio de reconstrucción ni claves de acceso remotas.
+Web: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
 
-## Prueba entre dos personas
+Receptor: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir
 
-1. El emisor abre la dirección HTTPS, elige Crear envío y carga un PDF, imagen o archivo de audio; también puede escribir texto o grabar una nota de voz con permiso del micrófono.
-2. Convierte y descarga AMBOS archivos: la obra PNG y el token JSON.
-3. Envía el enlace de recepción y los dos archivos por su mensajería habitual. El PNG se envía **como archivo/documento**, evitando que el servicio lo recomprima o cambie de tamaño.
-4. La otra persona abre Reconstruir recibido, selecciona esos dos archivos y descarga el original recuperado. No debe tener ni recibir el original.
-5. La interfaz comprueba el SHA-256 del contenido recuperado. Una alteración del PNG o token se rechaza.
+Aplicación estática en español. El navegador cifra y recupera el archivo; no
+hay API que reciba originales o secretos ni base de datos de mensajes. Las
+funciones criptográficas proceden de Web Crypto.
 
-No hay un chat con entrega automática ni almacenamiento en nube en esta versión. Compartir el enlace no envía el archivo: los dos adjuntos son imprescindibles. El token completo puede ser grande; la aplicación muestra su tamaño real.
+## Primera prueba privada
 
-## Qué se conserva
+1. Selecciona un PDF, imagen o audio; también puedes escribir texto o grabar voz.
+2. Elige modo privado, una portada sugerida o propia, y la resolución. La
+   portada queda visible: usa una imagen que puedas compartir.
+3. Crea el envío. Se cifra el archivo y se verifica su recuperación antes de
+   habilitar la descarga del PNG y del token cifrado.
+4. Guarda la clave secreta generada. No está dentro del PNG ni del token.
+   Compártela por un canal separado y protegido. Si la pierdes, no existe una
+   clave maestra del servidor que permita recuperar el archivo.
+5. Envía PNG + token junto con el enlace del receptor. En WhatsApp, adjunta el
+   PNG como documento/archivo, sin recomprimir.
+6. El receptor selecciona ambos archivos y aporta la clave secreta. Puede
+   reconstruir sin red después de cargar la página y los motores.
 
-ASTRA-MSG-V1 extiende la demostración estricta de permutar píxeles de una página. La matriz fuente contiene una vista RGB opcional, **todos los bytes del archivo original como canales RGB**, y relleno cero. La obra es una permutación biyectiva de esa matriz completa. Este diseño permite conservar un PDF entero, el alfa y metadatos de imágenes, o el audio completo. No pretende que los bytes de audio ya fueran píxeles de un documento renderizado.
+## Identidad opcional del destinatario
 
-El paisaje se usa exclusivamente para elegir posiciones. No se incorporan sus colores a la obra. El resultado depende de la paleta y la distribución de valores de la fuente: un documento blanco produce una obra mayormente blanca, no una fotografía a todo color. El token almacena la permutación y metadatos, no una copia del archivo.
+El receptor crea una identidad en su navegador y exporta solo su clave pública.
+El emisor la importa y verifica su huella por otro canal. La clave privada es
+una CryptoKey no exportable guardada en IndexedDB y no viaja en el paquete.
 
-La transformación verifica la recuperación antes de habilitar las descargas. No se trata de cifrado; una persona con la obra y el token puede leer el mensaje. Los hashes detectan alteraciones, no acreditan la identidad de un remitente.
+No hay respaldo exportable de esa identidad privada. Borrar los datos del
+sitio o perder el perfil puede impedir abrir mensajes dirigidos a ella. Para
+la primera prueba portable, usa el modo de clave secreta guardada aparte.
+No exportable no garantiza protección por hardware: código malicioso del
+mismo origen o un equipo comprometido puede usar la clave mientras está abierta.
 
-## Portabilidad y funcionamiento sin red
+## Color, resolución y formato real
 
-El receptor solo necesita el PNG, el token y esta implementación pública del algoritmo. El worker se carga al abrir la página. Una vez cargado, la recuperación se puede ejecutar sin conexión, sin consultar el original ni el paisaje. Para volver a abrir la página después de cerrarla se necesita la conexión o una copia local de la aplicación.
+ASTRA-SECURE-V2 cifra el archivo y sus metadatos con AES-256-GCM. Los datos
+cifrados se guardan dentro de los bits menos significativos de los canales RGB
+de la portada. El token está cifrado y autentica los parámetros y el PNG completo.
 
-El visor PDF del emisor usa PDF.js 6.3.289 vendorizado; no consulta CDN. La grabación requiere HTTPS o localhost y permiso del micrófono. La grabación crea WAV PCM sin compresión. La recuperación no necesita PDF.js ni el micrófono.
+El modo privado **no es una permutación de los píxeles del documento legible**.
+Usa una portada pública como imagen portadora de información cifrada. El modo
+clásico ASTRA-MSG-V1 continúa como permutación exacta de su matriz original,
+marcado sin cifrado. Los paquetes clásicos siguen siendo recuperables.
 
-Navegador recomendado para esta prueba: Edge o Chrome actual. Límite de archivo de entrada: 20 MiB; el consumo de memoria de matrices y ordenación puede limitar teléfonos con poca memoria. La interfaz comunica los errores y no declara una reconstrucción correcta si fallan los hashes.
+Las salidas privadas permiten 2K, 4K y hasta 4096 × 4096, según capacidad y
+memoria. Ampliar una portada pequeña no añade detalle óptico; la interfaz lo
+informa. Los estilos se calculan localmente. Las sugerencias son imágenes
+generadas previamente con imagegen; no hay un servicio de IA en la web que
+reciba las imágenes que subes.
 
-## Ejecutar una copia local
+Archivo máximo: 20 MiB. La capacidad depende de dimensiones y bits de carga.
+En teléfonos conviene empezar con archivos pequeños. El PNG sin pérdidas puede
+pesar mucho más que el original. La aplicación muestra el tamaño real del token.
 
-Desde esta carpeta:
+## Implementación y pruebas
+
+- `public/secure-worker.js`: cifrado, transporte RGB y recuperación V2.
+- `public/identity-store.js`: identidad privada local y exportación pública.
+- `public/codec-worker.js`: compatibilidad y permutación clásica.
+- `public/spec/SECURE_CODEC.md`: especificación interoperable V2.
+- `public/spec/SECURITY.md`: controles, modelo de amenaza y límites reales.
+- `tests/secure_audit_core.py`: validación independiente de criptografía/formato.
+- `tests/`: pruebas de interfaz, voz, conservación y compatibilidad.
+- `public/assets/IMAGE_PROVENANCE.json`: prompts y procedencia de portadas.
+
+Se usan cifrado autenticado, claves independientes, validación de entradas,
+protección de metadatos, recursos locales, CSP y HTTPS. No se implementan
+Double Ratchet, garantías poscuánticas ni certificación externa. Cifrar para
+el receptor no firma la identidad del remitente. Las pruebas automatizadas no
+sustituyen una auditoría externa para datos de alta sensibilidad.
+
+## Ejecutar localmente
 
 ```powershell
 python -m http.server 8770 --bind 127.0.0.1 --directory public
 ```
 
-Abrir http://localhost:8770. Para compartir fuera del equipo se necesita la dirección HTTPS publicada; localhost solo apunta al equipo donde se abre.
-
-Las especificaciones del formato se encuentran en `public/spec/`. El codec portable está en `public/codec-worker.js`. Las pruebas independientes están en `tests/` y sus resultados se guardan en `WEB_VALIDATION_REPORT.json`.
+Abrir http://localhost:8770. La dirección pública funciona sin ese servidor
+ni la computadora del emisor. `package_site.py` prepara únicamente los activos
+estáticos del commit para publicar. Las credenciales temporales de publicación
+no se guardan en el repositorio.

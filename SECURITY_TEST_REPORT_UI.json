@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "base_url": "http://127.0.0.1:8770",
+  "seconds": 56.766,
+  "checks": [
+    {
+      "test": "Default private UI generates independently authenticated PNG/token and separate secret",
+      "passed": true,
+      "png_bytes": 8388628,
+      "token_bytes": 450
+    },
+    {
+      "test": "Fresh offline recipient UI rejects wrong key then downloads exact original with correct key",
+      "passed": true
+    },
+    {
+      "test": "Custom cover and 4K UI produce actual 3840 x 2560 cover-preserving PNG",
+      "passed": true,
+      "width": 3840,
+      "height": 2560,
+      "png_bytes": 29496078,
+      "bits": 1
+    },
+    {
+      "test": "UI creates public-only recipient identity with independently verified fingerprint and persistent reload",
+      "passed": true
+    },
+    {
+      "test": "Recipient UI requires explicit fingerprint confirmation and generates no shared secret",
+      "passed": true
+    },
+    {
+      "test": "Offline recipient UI uses persisted private identity to download exact original",
+      "passed": true
+    },
+    {
+      "test": "Receiver without the target identity cannot open recipient package",
+      "passed": true
+    },
+    {
+      "test": "Legacy ASTRA-MSG-V1 receiving interface remains compatible",
+      "passed": true
+    },
+    {
+      "test": "Real text composer preserves exact UTF-8 through secure encoding",
+      "passed": true
+    }
+  ],
+  "browser": "Microsoft Edge",
+  "anonymous_fresh_contexts": true,
+  "recipient_network_disabled_after_load": true,
+  "post_cutoff_network_attempts": [],
+  "console_errors": [],
+  "secrets_in_report": false
+}

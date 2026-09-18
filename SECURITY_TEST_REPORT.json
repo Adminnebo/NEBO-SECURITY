@@ -1,0 +1,133 @@
+{
+  "status": "PASS",
+  "base_url": "http://127.0.0.1:8770",
+  "seconds": 23.437,
+  "checks": [
+    {
+      "test": "NIST AES-256-GCM and RFC5869 HKDF vectors in Python and native WebCrypto",
+      "passed": true
+    },
+    {
+      "test": "Independent AES/HKDF/LSB + offline exact png_alpha",
+      "passed": true,
+      "bits": 1,
+      "max_channel_delta": 1,
+      "token_bytes": 447,
+      "original_sha256": "29155928dfdf7c37ac25217617ce921d282854449fb6a9ca63a3c18edfe98901"
+    },
+    {
+      "test": "Independent AES/HKDF/LSB + offline exact pdf_two_pages",
+      "passed": true,
+      "bits": 1,
+      "max_channel_delta": 1,
+      "token_bytes": 447,
+      "original_sha256": "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52"
+    },
+    {
+      "test": "Independent AES/HKDF/LSB + offline exact wav",
+      "passed": true,
+      "bits": 1,
+      "max_channel_delta": 1,
+      "token_bytes": 447,
+      "original_sha256": "f2f64e29bb147cc4c2cb7dfd1282cd2bdc3202bad8d4e891dc5d14283d7206d9"
+    },
+    {
+      "test": "Independent AES/HKDF/LSB + offline exact text_utf8",
+      "passed": true,
+      "bits": 1,
+      "max_channel_delta": 1,
+      "token_bytes": 446,
+      "original_sha256": "a6de8317f35d020e3bd4fb092fab951b593884609288fbe35065bbc501e89b3e"
+    },
+    {
+      "test": "Wrong and missing recovery secrets rejected",
+      "passed": true
+    },
+    {
+      "test": "Header AAD, encrypted token, duplicate/unknown fields, IV and size tampering rejected",
+      "passed": true,
+      "cases": [
+        "payload_iv",
+        "token_iv",
+        "salt",
+        "encrypted_body",
+        "unknown_header_field",
+        "duplicate_JSON_key",
+        "oversized_token",
+        "same_IV"
+      ]
+    },
+    {
+      "test": "Changed PNG and artwork/token substitution rejected",
+      "passed": true
+    },
+    {
+      "test": "Authenticated but out-of-bounds body fields rejected",
+      "passed": true
+    },
+    {
+      "test": "Repeated plaintext with same secret creates fresh salts, IVs, PNG and token",
+      "passed": true
+    },
+    {
+      "test": "Separate automatically generated 256-bit secrets are not in tokens",
+      "passed": true
+    },
+    {
+      "test": "All 1/2/3/4-bit capacity selections, extraction and pixel error bounds",
+      "passed": true,
+      "bits_tested": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "test": "Empty/oversize files, insufficient carrier and side bound rejected",
+      "passed": true
+    },
+    {
+      "test": "Independent Python P-256 ECDH + HKDF + AES-GCM recipient decryption",
+      "passed": true
+    },
+    {
+      "test": "Nonextractable private identity and wrong-recipient rejection",
+      "passed": true
+    },
+    {
+      "test": "Structured-cloned nonextractable private key still decrypts",
+      "passed": true
+    },
+    {
+      "test": "Recipient public-key fingerprint mismatch rejected",
+      "passed": true
+    },
+    {
+      "test": "Different custom cover controls visible artwork high bits",
+      "passed": true
+    },
+    {
+      "test": "IndexedDB key survives reload, refuses export, and decrypts offline",
+      "passed": true
+    },
+    {
+      "test": "Corrupted stored public/private identity pairing is detected",
+      "passed": true
+    },
+    {
+      "test": "Actual 3840 x 2160 PNG output",
+      "passed": true,
+      "width": 3840,
+      "height": 2160,
+      "png_bytes": 24887323
+    }
+  ],
+  "browser": "Microsoft Edge",
+  "oracle": "Python cryptography AESGCM/HKDF/ECDH; NumPy/Pillow LSB extraction",
+  "cryptographic_reference_sources": [
+    "https://www.rfc-editor.org/rfc/rfc5869",
+    "https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/AES_GCM.pdf",
+    "https://www.w3.org/TR/webcrypto/"
+  ]
+}

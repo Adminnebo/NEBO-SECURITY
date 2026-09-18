@@ -1,0 +1,14 @@
+{
+  "pageerrors": [],
+  "console_errors": [],
+  "mobile_overflow": false,
+  "token_format": "ASTRA-SECURE-V2",
+  "token_mode": "secret",
+  "secret_character_count": 43,
+  "token_bytes": 450,
+  "artwork_bytes": 8388628,
+  "private_download_name": "ASTRA-envio-privado-ASTRA-obra.png",
+  "pdf_receiver_verified": "\u2713 Original recuperado y verificado",
+  "pdf_preview_mode": "Safe static download card; no embedded document",
+  "iframe_count": 0
+}

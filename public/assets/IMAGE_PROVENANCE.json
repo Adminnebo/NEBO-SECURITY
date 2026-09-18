@@ -1,0 +1,23 @@
+{
+  "tool": "image_gen built-in",
+  "purpose": "Public suggested covers. Original files kept unchanged. Output size must be reported honestly when enlarged.",
+  "actual_asset_resolution": { "width": 1672, "height": 941, "channels": "RGB", "format": "PNG" },
+  "resolution_note": "The prompts requested 3840x2160, but the tool returned 1672x941. The app discloses enlargement for higher-resolution output.",
+  "prompts": [
+    {
+      "name": "coast",
+      "saved_path": "public/assets/coast.png",
+      "prompt": "Use case: photorealistic-natural. Create a single spectacular colorful high resolution landscape photograph for a selectable artwork background in a privacy app. Dominican Caribbean coastline at golden hour, turquoise clear water with visible reef patterns, lush green palms on a graceful beach curve, dramatic peach and coral sunset sky, cinematic natural light, detailed foliage, elegant balanced composition. Landscape aspect ratio 16:9, request 3840x2160 PNG. Edge-to-edge artwork only. No text, no frame, no UI, no watermark, no people. Preserve rich natural color and crisp fine detail."
+    },
+    {
+      "name": "aurora",
+      "saved_path": "public/assets/aurora.png",
+      "prompt": "Use case: photorealistic-natural. Create a single spectacular colorful high resolution landscape photograph for a selectable artwork background in a privacy app. Emerald and turquoise aurora borealis flowing across violet and midnight blue sky over an Icelandic fjord, sharp snowy mountain silhouettes, reflective still water, tiny amber-lit cabin for scale, depth and atmosphere, subtle stars, detailed natural textures, cinematic vivid color. Landscape aspect ratio 16:9, request 3840x2160 PNG. Edge-to-edge artwork only. No text, no frame, no UI, no watermark."
+    },
+    {
+      "name": "nebula",
+      "saved_path": "public/assets/nebula.png",
+      "prompt": "Use case: stylized-concept. Create a single magnificent high resolution cosmic art landscape, vivid magenta and violet nebula clouds interwoven with luminous turquoise and cobalt, golden dust lighting, layered depth with subtle bright stars and vast sweeping sculptural forms, tasteful dramatic professional space photography aesthetic, highly detailed, no recognizable copyrighted characters. Landscape aspect ratio 16:9, request 3840x2160 PNG. Edge-to-edge artwork only. No text, no frame, no UI, no watermark."
+    }
+  ]
+}
