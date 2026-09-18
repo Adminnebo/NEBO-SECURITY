@@ -1,7 +1,7 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
-  Permissions-Policy: microphone=(self), camera=(), geolocation=(), payment=()
+  Permissions-Policy: microphone=(self), camera=(), geolocation=(self), payment=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' blob:; frame-src blob: 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'
 
 /index.html
@@ -12,6 +12,8 @@
 /styles.css
   Cache-Control: no-cache
 /theme.js
+  Cache-Control: no-cache
+/bundle.js
   Cache-Control: no-cache
 
 /secure-worker.js

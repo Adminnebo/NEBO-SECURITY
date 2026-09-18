@@ -1,0 +1,111 @@
+{
+  "status": "PASS",
+  "check_count": 25,
+  "checks": [
+    {
+      "name": "mixed_file_text_voice_location_byte_exact_roundtrip",
+      "pass": true
+    },
+    {
+      "name": "duplicate_human_names_indexed_unicode_nfc_and_safe_names",
+      "pass": true
+    },
+    {
+      "name": "empty_file_preserved_with_standard_sha256",
+      "pass": true
+    },
+    {
+      "name": "deterministic_zip_and_exact_sync_size_estimator",
+      "pass": true
+    },
+    {
+      "name": "bundle_mime_detection",
+      "pass": true
+    },
+    {
+      "name": "mime_parameters_stripped_invalid_mime_falls_back_without_data_change",
+      "pass": true
+    },
+    {
+      "name": "arraybuffer_and_typed_view_inputs",
+      "pass": true
+    },
+    {
+      "name": "mixed_zip_secure_encrypt_decrypt_all_files_and_hashes_exact_wrong_secret_rejected",
+      "pass": true
+    },
+    {
+      "name": "payload_corruption_crc_rejected",
+      "pass": true
+    },
+    {
+      "name": "modified_payload_even_with_repaired_crc_rejected_by_sha256",
+      "pass": true
+    },
+    {
+      "name": "truncated_archive_rejected",
+      "pass": true
+    },
+    {
+      "name": "overlapping_local_offsets_rejected",
+      "pass": true
+    },
+    {
+      "name": "compression_and_bomb_profile_rejected",
+      "pass": true
+    },
+    {
+      "name": "encrypted_zip_profile_rejected",
+      "pass": true
+    },
+    {
+      "name": "invalid_utf8_filename_rejected",
+      "pass": true
+    },
+    {
+      "name": "duplicate_zip_entry_paths_rejected",
+      "pass": true
+    },
+    {
+      "name": "traversal_path_rejected",
+      "pass": true
+    },
+    {
+      "name": "central_directory_range_rejected",
+      "pass": true
+    },
+    {
+      "name": "zip_attributes_and_links_rejected",
+      "pass": true
+    },
+    {
+      "name": "manifest_unknown_format_rejected",
+      "pass": true
+    },
+    {
+      "name": "empty_bundle_and_over_32_items_rejected",
+      "pass": true
+    },
+    {
+      "name": "32_empty_files_accepted",
+      "pass": true
+    },
+    {
+      "name": "oversized_input_rejected_before_parsing",
+      "pass": true
+    },
+    {
+      "name": "overhead_included_and_oversize_rejected_before_file_read",
+      "pass": true
+    },
+    {
+      "name": "exact_20_mib_archive_boundary_roundtrip",
+      "pass": true
+    }
+  ],
+  "mixed_zip_bytes": 4661,
+  "maximum_archive_bytes": 20971520,
+  "maximum_test_file_bytes": 20971035,
+  "node": "v24.19.0",
+  "seconds": 1.052
+}

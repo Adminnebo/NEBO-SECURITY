@@ -21,7 +21,7 @@ funciones criptográficas proceden de Web Crypto.
 
 ## Primera prueba privada
 
-En el teléfono, la interfaz guía el envío en tres pasos: **Archivo → Portada →
+En el teléfono, la interfaz guía el envío en tres pasos: **Contenido → Portada →
 Compartir**. La barra inferior permite avanzar, volver y cambiar a **Abrir
 recibido**. Las opciones adicionales están plegadas. El enlace es el mismo en
 móvil y escritorio; no hace falta instalar una aplicación.
@@ -30,7 +30,9 @@ Si el navegador admite compartir archivos, aparece un botón para enviar el
 PNG y el token con el menú del dispositivo. La clave secreta queda fuera de
 esa selección. También siguen disponibles las descargas individuales.
 
-1. Selecciona un PDF, imagen o audio; también puedes escribir texto o grabar voz.
+1. Añade uno o varios archivos de cualquier tipo: fotos, PDF, audio, video u otros.
+   También puedes añadir mensajes escritos, grabar notas de voz e incluir ubicaciones.
+   Cada selección se agrega al envío; puedes quitar elementos por separado.
 2. Elige modo privado, una portada sugerida o propia, y la resolución. La
    portada queda visible: usa una imagen que puedas compartir.
 3. Crea el envío. Se cifra el archivo y se verifica su recuperación antes de
@@ -42,6 +44,26 @@ esa selección. También siguen disponibles las descargas individuales.
    PNG como documento/archivo, sin recomprimir.
 6. El receptor selecciona ambos archivos y aporta la clave secreta. Puede
    reconstruir sin red después de cargar la página y los motores.
+
+## Varios elementos en una sola imagen
+
+Un envío admite hasta **32 elementos y 20 MiB en total**, incluido el contenedor.
+La capacidad de la portada también depende de su resolución; la interfaz indica
+si hace falta una imagen mayor. Todos los elementos viajan dentro de **un PNG,
+un token y una clave secreta** en el modo privado habitual.
+
+El receptor ve una lista con cada elemento recuperado. Puede descargar cada uno,
+reproducir audios o guardar todo en un ZIP. Los bytes originales se conservan;
+los elementos con el mismo nombre tienen rutas independientes dentro del ZIP.
+Los nombres, tipos, ubicaciones y el manifiesto se cifran junto al contenido.
+La [especificación del contenedor](public/spec/BUNDLE_FORMAT.md) documenta el formato.
+Los envíos anteriores de un solo archivo siguen abriéndose.
+
+Para incluir una ubicación, introduce sus coordenadas o pulsa **Usar mi ubicación**.
+La app solo consulta la ubicación del dispositivo al pulsar ese botón y tras el
+permiso del navegador. Revisa los datos y pulsa **Añadir ubicación**. No hay
+seguimiento continuo. El receptor puede leer las coordenadas sin conexión;
+abrirlas en OpenStreetMap es una acción opcional que requiere conexión.
 
 ## Identidad opcional del destinatario
 

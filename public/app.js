@@ -1,9 +1,10 @@
 'use strict';
 import { loadIdentity, createIdentity, exportPublicIdentity, clearIdentity, loadRecipientBundle, fingerprintPublicBundle } from './identity-store.js';
+import { createBundle, readBundle, isBundleMime, estimateBundleSize, MAX_BUNDLE_ITEMS } from './bundle.js';
 
 const $ = id => document.getElementById(id);
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const state = { file: null, sourceURL: null, urls: [], workers: { classic: null, secure: null }, workerReady: new Set(), nextId: 1,
+const state = { file: null, items: [], nextItemId: 1, receivedCount: 1, receivedBundle: false, locating: false, locationRequest: 0, locationFix: null, urls: [], workers: { classic: null, secure: null }, workerReady: new Set(), nextId: 1,
   pending: null, busy: false, activeMode: 'sender', recording: null,
   preparingMicrophone: false, receivedArt: null, receivedToken: null, target: null, taskSerial: 0,
   cover: 'mountain', coverFile: null, coverURL: null, identity: null, recipient: null,
@@ -50,9 +51,9 @@ function syncMobile() {
     if (index === state.mobileStep) step.setAttribute('aria-current', 'step'); else step.removeAttribute('aria-current');
   });
   $('mobileIntroTitle').textContent = receiving ? 'Abre tu mensaje.' : 'Comparte algo privado.';
-  $('mobileIntroDescription').textContent = receiving ? 'Recupera el original desde tu teléfono.' : 'Tu archivo, protegido dentro de una imagen.';
-  $('senderStepTitle').textContent = mobileScreen.matches && state.mobileStep === 1 ? 'Dale tu estilo' : 'Elige tu archivo';
-  $('senderStepDescription').textContent = mobileScreen.matches && state.mobileStep === 1 ? 'Elige una portada y la calidad de la imagen.' : 'Se procesa en este dispositivo.';
+  $('mobileIntroDescription').textContent = receiving ? 'Recupera todos los elementos del envío.' : 'Archivos, mensajes y ubicación en una sola imagen.';
+  $('senderStepTitle').textContent = mobileScreen.matches && state.mobileStep === 1 ? 'Dale tu estilo' : 'Prepara tu envío';
+  $('senderStepDescription').textContent = mobileScreen.matches && state.mobileStep === 1 ? 'Elige una portada y la calidad de la imagen.' : 'Añade uno o varios elementos. Se procesan aquí.';
   $('senderPanel').querySelector('.input-panel .step-number').textContent = mobileScreen.matches && state.mobileStep === 1 ? '02' : '01';
   $('senderPanel').querySelector('.output-panel .step-number').textContent = mobileScreen.matches ? '03' : '02';
   for (const [id, active] of [['mobileSendTab', !receiving], ['mobileReceiveTab', receiving]]) {
@@ -66,13 +67,13 @@ function syncMobile() {
   button.disabled = state.busy || state.preparingMicrophone;
   if (state.busy) { button.textContent = receiving ? 'Abriendo…' : 'Creando envío…'; hint.textContent = 'Procesando en tu dispositivo. Espera un momento.'; }
   else if (receiving) {
-    button.textContent = recovered ? 'Guardar archivo original ↓' : 'Abrir y verificar →';
+    button.textContent = recovered ? state.receivedBundle ? 'Descargar todo en ZIP ↓' : 'Guardar archivo original ↓' : 'Abrir y verificar →';
     button.disabled = !recovered && $('decodeButton').disabled;
-    hint.textContent = recovered ? 'Archivo original recuperado y verificado.' : !state.receivedArt || !state.receivedToken ? 'Selecciona el PNG y el token que recibiste.' : state.tokenMode === 'secret' ? 'Introduce también la clave que recibiste aparte.' : 'Todo se reconstruye en tu navegador.';
+    hint.textContent = recovered ? `${state.receivedCount} elemento${state.receivedCount === 1 ? '' : 's'} recuperado${state.receivedCount === 1 ? '' : 's'} y verificado${state.receivedCount === 1 ? '' : 's'}.` : !state.receivedArt || !state.receivedToken ? 'Selecciona el PNG y el token que recibiste.' : state.tokenMode === 'secret' ? 'Introduce también la clave que recibiste aparte.' : 'Todo se reconstruye en tu navegador.';
   } else if (state.recording) { button.textContent = 'Terminar grabación ■'; hint.textContent = 'Tu nota de voz se está grabando.'; }
   else if (state.mobileStep === 0) {
     button.textContent = 'Elegir portada →'; button.disabled = !state.file || state.preparingMicrophone;
-    hint.textContent = state.file ? `${state.file.name} · ${formatBytes(state.file.size)}` : 'Elige un archivo, escribe o graba una nota.';
+    hint.textContent = state.file ? `${state.items.length} elemento${state.items.length === 1 ? '' : 's'} · ${formatBytes(totalAttachmentBytes())}` : 'Añade archivos, texto, voz o ubicación.';
   } else if (state.mobileStep === 1) {
     button.textContent = $('encodingMode').value === 'private' ? 'Crear envío privado →' : 'Crear envío sin cifrado →'; button.disabled = $('encodeButton').disabled;
     hint.textContent = button.disabled ? 'Confirma la identidad destinataria para continuar.' : $('encodingMode').value === 'private' ? 'Cifrado y verificado antes de compartir.' : 'El modo clásico no cifra el contenido.';
@@ -101,9 +102,11 @@ function updateButtons() {
   const needsRecipient = privateMode && document.querySelector('input[name=accessMode]:checked').value === 'recipient';
   $('encodeButton').disabled = state.busy || !state.file || Boolean(state.recording) || state.preparingMicrophone || needsRecipient && (!state.recipient || !$('recipientVerified').checked);
   $('decodeButton').disabled = state.busy || !state.receivedArt || !state.receivedToken;
-  for (const id of ['sourceFile', 'receivedArt', 'receivedToken', 'recordButton', 'demoButton', 'textButton', 'useText', 'encodingMode', 'coverFile', 'coverFormat', 'coverResolution', 'coverStyle', 'recipientFile', 'recipientVerified', 'createIdentity', 'clearIdentity']) $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  for (const id of ['sourceFile', 'receivedArt', 'receivedToken', 'recordButton', 'demoButton', 'textButton', 'useText', 'encodingMode', 'coverFile', 'coverFormat', 'coverResolution', 'coverStyle', 'recipientFile', 'recipientVerified', 'createIdentity', 'clearIdentity', 'locationButton', 'useCurrentLocation', 'addLocation', 'locationLabel', 'locationLatitude', 'locationLongitude', 'clearAttachments']) $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  $('useCurrentLocation').disabled ||= state.locating;
+  document.querySelectorAll('.remove-attachment,.attachment-cover').forEach(node => { node.disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone; });
   document.querySelectorAll('.cover-choice,input[name=accessMode]').forEach(node => { node.disabled = state.busy; });
-  $('useSourceCover').disabled = state.busy || !state.file?.type.startsWith('image/');
+  $('useSourceCover').disabled = state.busy || !state.items.some(item => item.file.type.startsWith('image/'));
   $('recordButton').disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
   $('senderTab').disabled = $('receiverTab').disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
   syncMobile();
@@ -115,6 +118,7 @@ function progress(mode, percent, message) {
 }
 function beginTask(mode) {
   const serial = ++state.taskSerial;
+  state.locationRequest++; state.locating = false;
   $(mode + 'Panel').classList.add('is-processing'); $(mode + 'Panel').classList.remove('has-result');
   if (mode === 'sender') state.mobileStep = 2;
   state.busy = true; errorFor(mode); $(mode + 'Empty').classList.add('hidden'); $(mode + 'Result').classList.add('hidden'); $(mode + 'Progress').classList.remove('hidden');
@@ -170,26 +174,104 @@ function cancelTask() {
   if (engine) { state.workers[engine]?.terminate(); state.workers[engine] = null; state.workerReady.delete(engine); startWorker(engine); }
   endTask(mode, true); toast('Operación cancelada.');
 }
-function clearFile() {
-  if (state.busy || state.recording) return;
-  if (state.sourceURL) URL.revokeObjectURL(state.sourceURL); state.sourceURL = null; state.file = null;
-  $('sourceFile').value = ''; $('selectedFile').replaceChildren(); $('selectedFile').classList.add('hidden'); updateButtons();
-  if (state.cover === 'source') chooseCover('mountain');
+function totalAttachmentBytes() { return state.items.reduce((sum, item) => sum + item.file.size, 0); }
+function needsBundle(items = state.items) { return items.length > 1 || items.some(item => item.kind === 'location' || item.file.size === 0); }
+function itemKindLabel(item) {
+  return item.kind === 'location' ? 'UBICACIÓN' : item.kind === 'text' ? 'MENSAJE' : item.kind === 'voice' || item.file.type.startsWith('audio/') ? 'AUDIO' : item.file.type.startsWith('image/') ? 'FOTO' : item.file.type.startsWith('video/') ? 'VIDEO' : item.file.type === 'application/pdf' ? 'PDF' : 'ARCHIVO';
 }
-function selectFile(file) {
-  if (!file || state.busy || state.recording) return false;
-  if (!file.size) { errorFor('sender', 'El archivo está vacío. Selecciona uno que contenga información.'); return false; }
-  if (file.size > MAX_FILE_BYTES) { errorFor('sender', 'Selecciona un archivo de hasta 20 MB.'); return false; }
-  clearFile(); errorFor('sender'); state.file = file; state.sourceURL = URL.createObjectURL(file);
-  const selection = $('selectedFile');
-  if (file.type.startsWith('image/')) { const image = el('img'); image.src = state.sourceURL; image.alt = 'Vista del archivo seleccionado'; selection.append(image); }
-  else selection.append(el('span', 'file-type', file.type.startsWith('audio/') ? 'VOZ' : /pdf/i.test(file.type) || /\.pdf$/i.test(file.name) ? 'PDF' : 'TXT'));
-  const info = el('div', 'file-info'); info.append(el('strong', '', file.name), el('small', '', `${formatBytes(file.size)} · Original completo`));
-  if (file.type.startsWith('audio/')) { const audio = el('audio'); audio.controls = true; audio.src = state.sourceURL; info.append(audio); }
-  selection.append(info); const remove = el('button', 'remove-file', '×'); remove.type = 'button'; remove.setAttribute('aria-label', 'Quitar archivo seleccionado'); remove.addEventListener('click', clearFile); selection.append(remove); selection.classList.remove('hidden');
-  $('senderResult').classList.add('hidden'); $('senderEmpty').classList.remove('hidden');
-  $('senderPanel').classList.remove('has-result');
-  updateButtons(); return true;
+function invalidateSenderResult() {
+  $('senderResult').classList.add('hidden'); $('senderEmpty').classList.remove('hidden'); $('senderPanel').classList.remove('has-result');
+  state.shareFiles = null; sharePackageButton.classList.add('hidden'); $('recoverySecret').value = '';
+  if (state.secretURL) { URL.revokeObjectURL(state.secretURL); state.secretURL = null; }
+}
+function renderAttachments() {
+  state.file = state.items[0]?.file || null;
+  const selection = $('selectedFile'); selection.replaceChildren(); selection.classList.toggle('hidden', !state.items.length);
+  $('attachmentSummary').classList.remove('hidden');
+  $('attachmentSummary').textContent = state.items.length ? `${state.items.length} de ${MAX_BUNDLE_ITEMS} elementos · ${formatBytes(totalAttachmentBytes())} en total` : 'Todavía no has añadido elementos.';
+  $('clearAttachments').classList.toggle('hidden', !state.items.length);
+  for (const item of state.items) {
+    const row = el('article', 'attachment-row'); row.dataset.itemId = String(item.id);
+    const visual = el('div', 'attachment-preview');
+    if (item.file.type.startsWith('image/')) { const img = el('img'); img.src = item.url; img.alt = ''; img.loading = 'lazy'; visual.append(img); }
+    else visual.append(el('span', 'attachment-kind', itemKindLabel(item)));
+    const info = el('div', 'attachment-info'); info.append(el('strong', '', item.file.name), el('small', '', `${itemKindLabel(item)} · ${formatBytes(item.file.size)}`));
+    if (item.file.type.startsWith('audio/')) { const audio = el('audio'); audio.controls = true; audio.preload = 'none'; audio.src = item.url; info.append(audio); }
+    if (item.file.type.startsWith('image/')) {
+      const cover = el('button', 'attachment-cover text-link', 'Usar como portada visible'); cover.type = 'button';
+      cover.addEventListener('click', () => { chooseCover('source', item.file); toast('Esta imagen será visible en la portada del envío.'); }); info.append(cover);
+    }
+    const remove = el('button', 'remove-attachment', '×'); remove.type = 'button'; remove.setAttribute('aria-label', `Quitar ${item.file.name}`); remove.addEventListener('click', () => removeAttachment(item.id));
+    row.append(visual, info, remove); selection.append(row);
+  }
+  updateButtons();
+}
+function removeAttachment(id) {
+  if (state.busy || state.recording || state.preparingMicrophone) return;
+  const item = state.items.find(item => item.id === id); if (!item) return;
+  URL.revokeObjectURL(item.url); state.items = state.items.filter(item => item.id !== id);
+  if (state.cover === 'source' && state.coverFile === item.file) chooseCover('mountain');
+  errorFor('sender'); invalidateSenderResult(); renderAttachments();
+}
+function clearFile() {
+  if (state.busy || state.recording || state.preparingMicrophone) return;
+  for (const item of state.items) URL.revokeObjectURL(item.url);
+  state.items = []; $('sourceFile').value = '';
+  if (state.cover === 'source') chooseCover('mountain');
+  errorFor('sender'); invalidateSenderResult(); renderAttachments();
+}
+function addFiles(files, kind = 'file') {
+  if (state.busy || state.recording || state.preparingMicrophone) return false;
+  const additions = Array.from(files || []).map(file => ({ file, kind })); if (!additions.length) return false;
+  const items = [...state.items, ...additions];
+  if (items.length > MAX_BUNDLE_ITEMS) { errorFor('sender', `Puedes añadir hasta ${MAX_BUNDLE_ITEMS} elementos por envío. No se ha añadido este lote.`); return false; }
+  try {
+    const size = needsBundle(items) ? estimateBundleSize(items) : items[0].file.size;
+    if (size > MAX_FILE_BYTES) throw new Error('El envío completo supera los 20 MB, incluido el espacio para organizar los adjuntos. Quita elementos o usa archivos más pequeños.');
+  } catch (error) { errorFor('sender', error.message); return false; }
+  for (const item of additions) state.items.push({ ...item, id: state.nextItemId++, url: URL.createObjectURL(item.file) });
+  $('sourceFile').value = ''; errorFor('sender'); invalidateSenderResult(); renderAttachments(); return true;
+}
+function selectFile(file, kind = 'file') { return file ? addFiles([file], kind) : false; }
+function readLocationInputs() {
+  const latitude = $('locationLatitude').value.trim(), longitude = $('locationLongitude').value.trim();
+  const lat = Number(latitude), lon = Number(longitude);
+  if (!latitude || !longitude || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) throw new Error('Introduce una latitud entre -90 y 90 y una longitud entre -180 y 180.');
+  return { lat, lon };
+}
+function addLocation() {
+  if (state.busy || state.recording || state.preparingMicrophone) return;
+  try {
+    const { lat, lon } = readLocationInputs();
+    const properties = { label: $('locationLabel').value.trim().slice(0, 120) || 'Ubicación compartida' };
+    if (state.locationFix && state.locationFix.lat === lat && state.locationFix.lon === lon) {
+      properties.accuracy_meters = state.locationFix.accuracy; properties.captured_at = state.locationFix.timestamp;
+    }
+    const geo = { type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties };
+    const count = state.items.filter(item => item.kind === 'location').length + 1;
+    if (selectFile(new File([JSON.stringify(geo, null, 2) + '\n'], `ubicacion-${count}.geojson`, { type: 'application/geo+json' }), 'location')) {
+      state.locationRequest++; state.locating = false; state.locationFix = null;
+      $('locationEditor').classList.add('hidden'); $('locationButton').setAttribute('aria-expanded', 'false'); $('locationLabel').value = ''; $('locationLatitude').value = ''; $('locationLongitude').value = ''; $('locationStatus').textContent = ''; updateButtons(); toast('Ubicación añadida al envío.');
+    }
+  } catch (error) { $('locationStatus').textContent = error.message; }
+}
+function useCurrentLocation() {
+  if (state.busy || state.recording || state.preparingMicrophone || state.locating) return;
+  if (!navigator.geolocation) { $('locationStatus').textContent = 'Este navegador no ofrece ubicación. Puedes escribir las coordenadas.'; return; }
+  const request = ++state.locationRequest; state.locating = true; $('locationStatus').textContent = 'Buscando tu ubicación. Puedes introducir las coordenadas manualmente.'; updateButtons();
+  navigator.geolocation.getCurrentPosition(position => {
+    if (request !== state.locationRequest) return;
+    state.locating = false;
+    const { latitude: lat, longitude: lon, accuracy } = position.coords;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { $('locationStatus').textContent = 'No se recibió una ubicación válida. Introduce las coordenadas.'; updateButtons(); return; }
+    $('locationLatitude').value = String(lat); $('locationLongitude').value = String(lon);
+    state.locationFix = { lat, lon, accuracy: Number.isFinite(accuracy) ? accuracy : null, timestamp: new Date(position.timestamp).toISOString() };
+    $('locationStatus').textContent = `Ubicación encontrada${Number.isFinite(accuracy) ? ` · precisión aproximada de ${Math.round(accuracy)} m` : ''}. Pulsa Añadir ubicación para incluirla.`; updateButtons();
+  }, error => {
+    if (request !== state.locationRequest) return;
+    state.locating = false;
+    $('locationStatus').textContent = error.code === 1 ? 'No se concedió permiso de ubicación. Puedes escribir las coordenadas.' : 'No se pudo obtener la ubicación. Inténtalo de nuevo o escribe las coordenadas.'; updateButtons();
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 }
 function scaledDimensions(width, height, maxPixels = 900000) { const scale = Math.min(1, Math.sqrt(maxPixels / (width * height))); return [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]; }
 function rgbaFromCanvas(canvas) { return { width: canvas.width, height: canvas.height, channels: 4, data: canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data.buffer }; }
@@ -213,8 +295,9 @@ function chooseCover(kind, file = null) {
   document.querySelectorAll('.cover-choice').forEach(button => { const selected = button.dataset.cover === kind; button.classList.toggle('selected', selected); button.setAttribute('aria-pressed', String(selected)); });
   const custom = kind === 'custom' || kind === 'source'; const info = $('customCoverInfo'); info.replaceChildren(); info.classList.toggle('hidden', !custom);
   if (custom) {
-    const selectedFile = kind === 'source' ? state.file : file;
+    const selectedFile = kind === 'source' ? file || state.items.find(item => item.file.type.startsWith('image/'))?.file : file;
     if (!selectedFile) return;
+    state.coverFile = selectedFile;
     state.coverURL = URL.createObjectURL(selectedFile); $('coverReference').src = state.coverURL;
     info.append(el('strong', '', kind === 'source' ? 'La imagen del mensaje será la portada visible.' : 'Portada personalizada visible.'), el('span', '', selectedFile.name));
   } else $('coverReference').src = new URL(`./assets/${kind}.png`, location.href).href;
@@ -223,7 +306,7 @@ function chooseCover(kind, file = null) {
 async function prepareCover() {
   let blob;
   if (state.cover === 'custom') blob = state.coverFile;
-  else if (state.cover === 'source') blob = state.file;
+  else if (state.cover === 'source') blob = state.coverFile;
   else { const response = await fetch(new URL(`./assets/${state.cover}.png`, location.href)); if (!response.ok) throw new Error('No se pudo cargar esta portada. Elige otra imagen o sube una propia.'); blob = await response.blob(); }
   if (!blob) throw new Error('Selecciona una imagen de portada.');
   const bitmap = await createImageBitmap(blob);
@@ -314,9 +397,10 @@ async function encode() {
   if (!state.file || state.busy || state.recording) return;
   const privateMode = $('encodingMode').value === 'private'; const accessMode = document.querySelector('input[name=accessMode]:checked').value;
   if (privateMode && accessMode === 'recipient' && (!state.recipient || !$('recipientVerified').checked)) { errorFor('sender', 'Carga la identidad pública y confirma su huella por otro canal.'); return; }
-  const file = state.file; const serial = beginTask('sender');
+  const items = state.items.map(({ file, kind }) => ({ file, kind })); const bundled = needsBundle(items); const serial = beginTask('sender');
   try {
-    const bytes = await file.arrayBuffer(); let result;
+    const file = bundled ? await createBundle(items) : items[0].file;
+    const bytes = await file.arrayBuffer(); if (state.taskSerial !== serial) return; let result;
     if (privateMode) {
       progress('sender', 3, 'Preparando la portada de alta resolución…');
       const cover = await prepareCover(); if (state.taskSerial !== serial) return;
@@ -341,6 +425,7 @@ async function encode() {
     $('artworkCaption').textContent = privateMode ? 'Imagen portadora con datos cifrados; utiliza colores de referencia. No es una permutación del documento.' : 'Permutación clásica de la representación del archivo. Conserva sus píxeles y su paleta; no cifra el contenido.';
     $('senderStats').replaceChildren(el('span', '', `${result.width} × ${result.height}`), el('span', '', `Token: ${formatBytes(result.token_bytes ?? token.size)}`), el('span', '', `${formatNumber(result.pixel_count)} píxeles`));
     if (privateMode) $('senderStats').append(el('span', '', `${result.bits_per_channel ?? result.bits} bits por canal`));
+    $('senderStats').append(el('span', '', `${items.length} elemento${items.length === 1 ? '' : 's'} · ${formatBytes(file.size)}`));
     $('secretResult').classList.add('hidden'); $('recipientResult').classList.add('hidden'); $('recoverySecret').value = '';
     if (state.secretURL) { URL.revokeObjectURL(state.secretURL); state.secretURL = null; }
     if (privateMode && result.recovery_secret) {
@@ -350,10 +435,10 @@ async function encode() {
       $('recipientResult').replaceChildren(el('strong', '', 'Protegido para la identidad destinataria'), el('code', 'fingerprint', await fingerprintPublicBundle(state.recipient))); $('recipientResult').classList.remove('hidden');
     }
     $('conservationExplanation').textContent = privateMode ? 'El archivo original, su nombre y sus metadatos de recuperación se cifran con AES-256-GCM. Los datos cifrados se insertan en los bits menos significativos de la portada visible. El token permite localizar y autenticar el contenido; requiere además la clave secreta o la identidad privada destinataria.' : 'La representación reversible incluye el archivo original completo y, cuando está disponible, una vista previa. Una permutación conserva todos los píxeles de esa representación. La obra y el token bastan para recuperar el original; no hay cifrado.';
-    $('senderHash').textContent = `SHA-256 del archivo original: ${result.source_sha256}`;
+    $('senderHash').textContent = `SHA-256 ${bundled ? 'del paquete completo' : 'del archivo original'}: ${result.source_sha256}`;
     $('senderResult').classList.remove('hidden'); endTask('sender');
     mobileScroll();
-  } catch (error) { if (state.taskSerial === serial) { errorFor('sender', error.code === 'CAPACITY' ? `El archivo no cabe en la portada elegida${error.capacity ? ` (capacidad: ${formatBytes(error.capacity)})` : ''}. Selecciona una resolución mayor; para los archivos más grandes usa Cuadrado · 4096 px.` : error.message || String(error)); endTask('sender', true); } }
+  } catch (error) { if (state.taskSerial === serial) { errorFor('sender', error.code === 'CAPACITY' ? `El envío completo no cabe en la portada elegida${error.capacity ? ` (capacidad: ${formatBytes(error.capacity)})` : ''}. Selecciona una resolución mayor; para los envíos más grandes usa Cuadrado · 4096 px.` : error.message || String(error)); endTask('sender', true); } }
 }
 async function setReceived(kind, file) {
   if (!file || state.busy) return;
@@ -386,24 +471,52 @@ async function decode() {
     }
     const result = await runWorker('decode', { artwork, token, ...access }, 'receiver', privateMode ? 'secure' : 'classic');
     if (result.exact_file_recovery !== true) throw new Error('La clave y la obra no confirmaron una recuperación exacta.');
-    const file = new Blob([result.file], { type: result.mime || 'application/octet-stream' }); const url = objectURL(file);
+    const items = isBundleMime(result.mime) ? await readBundle(new Uint8Array(result.file)) : null;
+    if (state.taskSerial !== serial) return;
+    state.receivedCount = items?.length || 1; state.receivedBundle = Boolean(items);
+    const file = new Blob([result.file], { type: items ? 'application/zip' : result.mime || 'application/octet-stream' }); const url = objectURL(file);
     const name = result.name || result.filename || 'archivo-recuperado'; $('downloadRestored').href = url; $('downloadRestored').download = name;
-    $('restoredFileInfo').replaceChildren(); const info = el('div'); info.append(el('strong', '', name), el('small', '', `${formatBytes(file.size)} · Archivo original completo`)); $('restoredFileInfo').append(el('span', '', '✓'), info);
-    $('receiverHash').textContent = `SHA-256 verificado del archivo original y reconstruido: ${result.sha256 || result.source_sha256 || result.recovered_sha256}`;
-    await showRestored(file, url, name); $('receiverResult').classList.remove('hidden'); endTask('receiver');
+    $('downloadRestored').textContent = items ? 'Descargar todo en ZIP ↓' : 'Descargar archivo original ↓';
+    $('restoredFileInfo').replaceChildren(); const info = el('div'); info.append(el('strong', '', items ? `${items.length} elemento${items.length === 1 ? '' : 's'} recuperado${items.length === 1 ? '' : 's'}` : name), el('small', '', `${formatBytes(file.size)} · ${items ? 'Contenido completo verificado' : 'Archivo original completo'}`)); $('restoredFileInfo').append(el('span', '', '✓'), info);
+    $('receiverHash').textContent = `SHA-256 verificado ${items ? 'del paquete; también se comprobó cada adjunto' : 'del archivo original y reconstruido'}: ${result.sha256 || result.source_sha256 || result.recovered_sha256}`;
+    if (items) await showRestoredItems(items); else await showRestored(file, url, name);
+    if (state.taskSerial !== serial) return;
+    $('receiverResult').classList.remove('hidden'); endTask('receiver');
     mobileScroll();
   } catch (error) { if (state.taskSerial === serial) { errorFor('receiver', error.message || String(error)); endTask('receiver', true); } }
 }
-async function showRestored(blob, url, name) {
-  const preview = $('restoredPreview'); preview.replaceChildren(); const mime = blob.type;
-  if (mime.startsWith('image/')) { const image = el('img'); image.src = url; image.alt = 'Imagen original recuperada'; preview.append(image); }
-  else if (mime.startsWith('audio/')) { const audio = el('audio'); audio.controls = true; audio.src = url; preview.append(audio); }
+async function showRestoredItems(items) {
+  const preview = $('restoredPreview'); preview.replaceChildren(); const list = el('div', 'restored-items'); preview.append(list);
+  for (const item of items) {
+    const blob = new Blob([item.bytes], { type: item.mime }); const url = objectURL(blob);
+    const card = el('article', 'restored-item'); const heading = el('div', 'restored-item-heading');
+    heading.append(el('strong', '', item.name), el('small', '', `${formatBytes(blob.size)} · Verificado`));
+    const content = el('div', 'restored-item-content');
+    const download = el('a', 'button secondary attachment-download', 'Descargar este elemento ↓'); download.href = url; download.download = item.name;
+    card.append(heading, content, download); list.append(card);
+    await showRestored(blob, url, item.name, content, item.kind);
+  }
+}
+async function showRestored(blob, url, name, preview = $('restoredPreview'), kind = 'file') {
+  preview.replaceChildren(); const mime = blob.type;
+  if (kind === 'location') {
+    if (blob.size > 8192) throw new Error('La ubicación recibida supera el tamaño admitido.');
+    const geo = JSON.parse(await blob.text()); const coordinates = geo?.geometry?.coordinates;
+    if (geo?.type !== 'Feature' || geo.geometry?.type !== 'Point' || !Array.isArray(coordinates) || coordinates.length !== 2 || coordinates.some(value => typeof value !== 'number' || !Number.isFinite(value)) || Math.abs(coordinates[0]) > 180 || Math.abs(coordinates[1]) > 90) throw new Error('La ubicación recibida no contiene coordenadas válidas.');
+    const [lon, lat] = coordinates;
+    preview.append(el('strong', '', typeof geo.properties?.label === 'string' ? geo.properties.label.slice(0, 120) : 'Ubicación compartida'), el('p', '', `Latitud: ${lat} · Longitud: ${lon}`));
+    if (Number.isFinite(geo.properties?.accuracy_meters) && geo.properties.accuracy_meters >= 0) preview.append(el('small', '', `Precisión aproximada: ${Math.round(geo.properties.accuracy_meters)} m`));
+    const link = el('a', 'text-link location-map-link', 'Abrir ubicación en OpenStreetMap ↗'); link.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`; link.target = '_blank'; link.rel = 'noopener noreferrer'; preview.append(link);
+  }
+  else if (mime.startsWith('image/')) { const image = el('img'); image.src = url; image.alt = 'Imagen original recuperada'; image.loading = 'lazy'; preview.append(image); }
+  else if (mime.startsWith('audio/') || mime.startsWith('video/')) { const media = el(mime.startsWith('audio/') ? 'audio' : 'video'); media.controls = true; media.preload = 'none'; media.src = url; preview.append(media); }
   else if (mime === 'application/pdf') {
     // Recovered documents are untrusted. Never execute them in a same-origin
     // iframe, including a file whose authenticated name merely ends in .pdf.
     const card = el('div', 'pdf-safe-card'); card.append(el('span', 'file-type', 'PDF'), el('strong', '', 'Documento original recuperado'), el('p', '', 'El archivo se ha verificado. Descárgalo para abrirlo en tu visor de documentos.')); preview.append(card);
   }
   else if (mime.startsWith('text/') || /\.txt$/i.test(name)) { const text = await blob.slice(0, 200000).text(); preview.append(el('pre', '', text)); }
+  else preview.append(el('p', '', 'Archivo recuperado. Descárgalo para abrirlo con una aplicación compatible.'));
 }
 async function copyReceiverLink() {
   const url = new URL(location.href); url.search = ''; url.hash = ''; url.searchParams.set('modo', 'recibir');
@@ -424,14 +537,16 @@ function wavFile(record) {
 }
 async function startRecording() {
   if (state.busy || state.recording || state.preparingMicrophone) return;
+  const remaining = MAX_FILE_BYTES - totalAttachmentBytes() - 65536;
+  if (state.items.length >= MAX_BUNDLE_ITEMS || remaining < 16384) { errorFor('sender', 'Quita algún elemento para dejar espacio para una nota de voz.'); return; }
   if (!navigator.mediaDevices?.getUserMedia) { errorFor('sender', 'Abre la página por HTTPS o desde localhost para usar el micrófono. También puedes seleccionar un archivo de audio.'); return; }
   state.preparingMicrophone = true; errorFor('sender'); updateButtons(); let stream, context;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
     const AudioContext = window.AudioContext || window.webkitAudioContext; context = new AudioContext(); await context.resume();
     const source = context.createMediaStreamSource(stream); const processor = context.createScriptProcessor(4096, 1, 1);
-    const record = { stream, context, source, processor, chunks: [], rate: context.sampleRate, bytes: 44, start: Date.now() };
-    processor.onaudioprocess = event => { if (state.recording !== record) return; const chunk = new Float32Array(event.inputBuffer.getChannelData(0)); record.chunks.push(chunk); record.bytes += chunk.length * 2; if (record.bytes > MAX_FILE_BYTES - 16384) { stopRecording(false); toast('La nota alcanzó el tamaño máximo y está lista para convertir.'); } };
+    const record = { stream, context, source, processor, chunks: [], rate: context.sampleRate, bytes: 44, maxBytes: remaining, start: Date.now() };
+    processor.onaudioprocess = event => { if (state.recording !== record) return; const count = Math.max(0, Math.floor((record.maxBytes - record.bytes) / 2)); const chunk = new Float32Array(event.inputBuffer.getChannelData(0).subarray(0, count)); record.chunks.push(chunk); record.bytes += chunk.length * 2; if (record.bytes >= record.maxBytes - 8192) { stopRecording(false); toast('La nota alcanzó el espacio disponible y se añadió al envío.'); } };
     state.recording = record; source.connect(processor); processor.connect(context.destination); $('recording').classList.remove('hidden'); $('recordTime').textContent = '00:00';
     record.timer = setInterval(() => { const seconds = Math.floor((Date.now() - record.start) / 1000); $('recordTime').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }, 250);
   } catch (error) {
@@ -440,13 +555,14 @@ async function startRecording() {
   } finally { state.preparingMicrophone = false; updateButtons(); }
 }
 async function stopRecording(cancel) {
-  const record = state.recording; if (!record) return; state.recording = null; clearInterval(record.timer); record.processor.onaudioprocess = null; record.source.disconnect(); record.processor.disconnect(); record.stream.getTracks().forEach(track => track.stop()); await record.context.close(); $('recording').classList.add('hidden'); updateButtons();
-  if (!cancel && record.chunks.length) selectFile(wavFile(record)); else if (!cancel) toast('La nota fue demasiado breve. Inténtalo de nuevo.');
+  const record = state.recording; if (!record) return; state.recording = null; state.preparingMicrophone = true; clearInterval(record.timer); record.processor.onaudioprocess = null; record.source.disconnect(); record.processor.disconnect(); record.stream.getTracks().forEach(track => track.stop());
+  try { await record.context.close(); } finally { state.preparingMicrophone = false; $('recording').classList.add('hidden'); updateButtons(); }
+  if (!cancel && record.chunks.some(chunk => chunk.length)) selectFile(wavFile(record), 'voice'); else if (!cancel) toast('La nota fue demasiado breve. Inténtalo de nuevo.');
 }
-function setupDrop(node, callback) {
+function setupDrop(node, callback, multiple = false) {
   node.addEventListener('dragover', event => { event.preventDefault(); if (!state.busy) node.classList.add('dragover'); });
   node.addEventListener('dragleave', () => node.classList.remove('dragover'));
-  node.addEventListener('drop', event => { event.preventDefault(); node.classList.remove('dragover'); if (!state.busy) callback(event.dataTransfer.files[0]); });
+  node.addEventListener('drop', event => { event.preventDefault(); node.classList.remove('dragover'); if (!state.busy) callback(multiple ? event.dataTransfer.files : event.dataTransfer.files[0]); });
 }
 
 $('senderTab').addEventListener('click', () => setMode('sender')); $('receiverTab').addEventListener('click', () => setMode('receiver'));
@@ -463,12 +579,16 @@ $('mobileAction').addEventListener('click', () => {
   else if (state.mobileStep === 1) encode();
   else if (state.mobileStep === 2) setMobileStep(1);
 });
-$('sourceFile').addEventListener('change', () => selectFile($('sourceFile').files[0])); $('receivedArt').addEventListener('change', () => setReceived('art', $('receivedArt').files[0])); $('receivedToken').addEventListener('change', () => setReceived('token', $('receivedToken').files[0]));
-setupDrop($('sourceDrop'), selectFile); setupDrop($('artDrop'), file => setReceived('art', file)); setupDrop($('tokenDrop'), file => setReceived('token', file));
+$('sourceFile').addEventListener('change', () => addFiles($('sourceFile').files)); $('receivedArt').addEventListener('change', () => setReceived('art', $('receivedArt').files[0])); $('receivedToken').addEventListener('change', () => setReceived('token', $('receivedToken').files[0]));
+setupDrop($('sourceDrop'), addFiles, true); setupDrop($('artDrop'), file => setReceived('art', file)); setupDrop($('tokenDrop'), file => setReceived('token', file));
+$('clearAttachments').addEventListener('click', clearFile);
 $('encodeButton').addEventListener('click', encode); $('decodeButton').addEventListener('click', decode); document.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', cancelTask));
 $('recordButton').addEventListener('click', startRecording); $('stopRecord').addEventListener('click', () => stopRecording(false)); $('cancelRecord').addEventListener('click', () => stopRecording(true));
 $('textButton').addEventListener('click', () => { $('textEditor').classList.toggle('hidden'); if (!$('textEditor').classList.contains('hidden')) $('textInput').focus(); });
-$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-nebo.txt', { type: 'text/plain' })); });
+$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de añadirlo.'); return; } const count = state.items.filter(item => item.kind === 'text').length; if (selectFile(new File([text], count ? `mensaje-nebo-${count + 1}.txt` : 'mensaje-nebo.txt', { type: 'text/plain' }), 'text')) { $('textInput').value = ''; $('textEditor').classList.add('hidden'); toast('Mensaje añadido al envío.'); } });
+$('locationButton').addEventListener('click', () => { const editor = $('locationEditor'); editor.classList.toggle('hidden'); $('locationButton').setAttribute('aria-expanded', String(!editor.classList.contains('hidden'))); if (!editor.classList.contains('hidden')) $('locationLabel').focus(); });
+$('useCurrentLocation').addEventListener('click', useCurrentLocation); $('addLocation').addEventListener('click', addLocation);
+for (const id of ['locationLatitude', 'locationLongitude']) $(id).addEventListener('input', () => { state.locationRequest++; state.locating = false; state.locationFix = null; $('locationStatus').textContent = ''; updateButtons(); });
 $('demoButton').addEventListener('click', async () => { if (state.busy) return; $('demoButton').disabled = true; errorFor('sender'); try { const response = await fetch(new URL('./assets/documento-ejemplo.pdf', location.href)); if (!response.ok) throw new Error('No se pudo cargar el documento de ejemplo. Puedes seleccionar tu propio archivo.'); const file = new File([await response.blob()], 'documento-ejemplo.pdf', { type: 'application/pdf' }); if (selectFile(file)) { if (mobileScreen.matches) setMobileStep(1); else await encode(); } } catch (error) { errorFor('sender', error.message); } finally { updateButtons(); } });
 document.querySelectorAll('.copy-receiver').forEach(button => button.addEventListener('click', copyReceiverLink));
 document.querySelectorAll('.cover-choice').forEach(button => button.addEventListener('click', () => chooseCover(button.dataset.cover)));
@@ -478,7 +598,7 @@ $('coverReference').addEventListener('error', () => { $('coverScaleNote').textCo
 $('coverFormat').addEventListener('change', () => { const square = $('coverFormat').value === 'square'; $('coverResolution').querySelector('option[value="4096"]').disabled = !square; if (!square && $('coverResolution').value === '4096') $('coverResolution').value = '3840'; describeCover(); });
 $('coverResolution').addEventListener('change', describeCover); $('coverStyle').addEventListener('change', describeCover);
 $('coverFile').addEventListener('change', () => { const file = $('coverFile').files[0]; if (!file) return; if (!file.type.startsWith('image/') || file.size > MAX_FILE_BYTES) { errorFor('sender', 'Selecciona una imagen de portada de hasta 20 MB.'); return; } chooseCover('custom', file); });
-$('useSourceCover').addEventListener('click', () => { if (state.file?.type.startsWith('image/')) chooseCover('source'); });
+$('useSourceCover').addEventListener('click', () => { const image = state.items.find(item => item.file.type.startsWith('image/')); if (image) { chooseCover('source', image.file); toast('La primera foto adjunta será la portada visible. Puedes elegir otra desde la lista.'); } });
 document.querySelectorAll('input[name=accessMode]').forEach(input => input.addEventListener('change', () => { const recipient = document.querySelector('input[name=accessMode]:checked').value === 'recipient'; $('recipientControls').classList.toggle('hidden', !recipient); $('accessSummary').textContent = recipient ? 'Identidad destinataria' : 'Clave secreta'; updateButtons(); }));
 $('recipientFile').addEventListener('change', async () => {
   state.recipient = null; $('recipientVerified').checked = false; $('recipientSummary').classList.add('hidden'); updateButtons(); const file = $('recipientFile').files[0]; if (!file) return;
@@ -506,12 +626,12 @@ function applyResponsiveLayout() {
   $('advancedAccess').open = !mobileScreen.matches || document.querySelector('input[name=accessMode]:checked').value === 'recipient';
   const names = mobileScreen.matches ? ['Horizontal', 'Vertical', 'Cuadrado'] : ['Horizontal · 3:2', 'Vertical · 2:3', 'Cuadrado · 1:1'];
   Array.from($('coverFormat').options).forEach((option, i) => { option.textContent = names[i]; });
-  $('sourceDrop').querySelector('small').textContent = mobileScreen.matches ? 'Hasta 20 MB · Sin subirlo al servidor' : 'Imágenes, PDF, texto y audio · Hasta 20 MB';
+  $('sourceDrop').querySelector('small').textContent = 'Hasta 20 MB en total · 32 elementos';
   syncMobile();
 }
 mobileScreen.addEventListener('change', applyResponsiveLayout);
 document.querySelector('.help-link').addEventListener('click', () => { document.body.classList.add('mobile-help-open'); });
-applyResponsiveLayout();
+applyResponsiveLayout(); renderAttachments();
 setMode(new URLSearchParams(location.search).get('modo') === 'recibir' ? 'receiver' : 'sender'); updateEncodingMode(); describeCover();
 if (!window.Worker || !window.crypto?.subtle) { $('compatibility').textContent = 'Usa un navegador actualizado y abre esta página mediante HTTPS para procesar y verificar archivos localmente.'; $('compatibility').classList.remove('hidden'); }
 startWorker('classic'); startWorker('secure'); refreshIdentity();
