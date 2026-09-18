@@ -1,0 +1,98 @@
+{
+  "status": "PASS",
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "checks": [
+    {
+      "test": "Multiple upload appends; duplicate names coexist; targeted removal preserves all other items",
+      "passed": true
+    },
+    {
+      "test": "Composed UTF-8 message appends to existing image, PDF, binary and WAV attachments",
+      "passed": true
+    },
+    {
+      "test": "Denied geolocation permission preserves draft; manual synthetic location remains usable",
+      "passed": true
+    },
+    {
+      "test": "Granted mocked browser geolocation populates coordinates only after explicit user click",
+      "passed": true
+    },
+    {
+      "test": "Real browser recording with fake microphone adds a valid WAV without replacing attachments",
+      "passed": true,
+      "recorded_bytes": 81964
+    },
+    {
+      "test": "Mixed attachment composer has no horizontal overflow at 390 light and 320 dark",
+      "passed": true,
+      "screenshots": [
+        "tests/multi-390-light.png",
+        "tests/multi-320-dark.png"
+      ]
+    },
+    {
+      "test": "Eight mixed attachments produce one independently authenticated PNG/token/secret",
+      "passed": true,
+      "artwork_bytes": 8388628,
+      "token_bytes": 451,
+      "plaintext_bytes": 92111
+    },
+    {
+      "test": "Fresh offline recipient rejects wrong key, then downloads every exact original and whole exact ZIP",
+      "passed": true,
+      "attachment_count": 8,
+      "attachment_sha256": [
+        "0191211980ee5d7116befc80d8e37f223e924a5c7f6d8d1c1fde74d95b086ead",
+        "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
+        "3f2882b246b0b0a462e8c08bfe458638b7097bdad25073d3e49e90f12ae14cae",
+        "852132ef92b1c39c3e876de57c2460dab4fddc88ec8697f262ec9d1510fcb6d6",
+        "a2089d4accb5f5824f1ccb8b116bd2d2cfb204550d725d735aba8f35e3a7e356",
+        "b2b6773335b4f3b80012c1175b238964f2bb345a57ed6ee521a6791e1e447712",
+        "bf3159e8ea8dd17baddb9accb206f469400cb434b3800b87b67413267a79cfa7",
+        "c24ad007301b6e07855a3a6cc23f6fbe710c14a63cdde65d136dadd9ccefc464"
+      ],
+      "zip_sha256": "f5fd325bf7669941ad05a8ba309ae1ce4309d7fcef0d20443b6f2e9f3aacc9ff"
+    },
+    {
+      "test": "Independent Python zipfile validates CRCs, unique safe member paths and exact original byte multiset",
+      "passed": true,
+      "manifest_format": "NEBO-BUNDLE-V1",
+      "zip_member_count": 9
+    },
+    {
+      "test": "Recovered mixed attachment cards fit 390 light and 320 dark without horizontal overflow",
+      "passed": true
+    },
+    {
+      "test": "Single-file private sender/receiver still returns exact standalone original",
+      "passed": true
+    },
+    {
+      "test": "Classic ASTRA-MSG-V1 package remains decodable offline",
+      "passed": true
+    }
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-OAmE2AqmWt9XsvPqMQ2GqNeGjiFrLg02Ifi6vhCnORU='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+    "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-mKkWtHaXpK9iNqAXEUPjvAi79yaKv8D2ESppTSJnArw='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "network_attempts_after_cutoff": [
+    "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/assets/nebo-symbol.svg"
+  ],
+  "browser": "Microsoft Edge",
+  "synthetic_microphone": true,
+  "synthetic_location": true,
+  "anonymous_fresh_receiver_context": true,
+  "receiver_offline_after_static_load": true,
+  "secrets_logged": false,
+  "optional_favicon_requests_blocked": [
+    "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/assets/nebo-symbol.svg"
+  ],
+  "functional_network_attempts_after_cutoff": [],
+  "seconds": 63.422,
+  "tested_source_commit": "0163c313d5b15a56c83990dbfa15059f006f229c",
+  "tested_site_version": 6
+}

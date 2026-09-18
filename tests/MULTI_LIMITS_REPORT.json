@@ -7,5 +7,7 @@
   "clear_all_removes_draft_items": true,
   "latitude_91_rejected_without_adding_item": true,
   "single_20_mib_file_accepted": true,
-  "additional_file_exceeding_aggregate_limit_rejected_without_losing_original": true
+  "additional_file_exceeding_aggregate_limit_rejected_without_losing_original": true,
+  "rejected_file_input_reset": true,
+  "same_file_can_be_added_after_removing_an_item": true
 }

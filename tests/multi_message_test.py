@@ -287,6 +287,7 @@ def run(args, report):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-url', default='http://127.0.0.1:8774')
+    parser.add_argument('--report', type=Path, default=REPORT)
     args = parser.parse_args()
     started = time.monotonic()
     report = {'status':'RUNNING', 'base_url':args.base_url, 'checks':[], 'page_errors':[],
@@ -302,5 +303,5 @@ if __name__ == '__main__':
         raise
     finally:
         report['seconds'] = round(time.monotonic() - started, 3)
-        REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         print(json.dumps({'status':report['status'], 'checks':len(report['checks']), 'seconds':report['seconds']}), flush=True)

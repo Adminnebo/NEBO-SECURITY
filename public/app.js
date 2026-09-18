@@ -579,7 +579,7 @@ $('mobileAction').addEventListener('click', () => {
   else if (state.mobileStep === 1) encode();
   else if (state.mobileStep === 2) setMobileStep(1);
 });
-$('sourceFile').addEventListener('change', () => addFiles($('sourceFile').files)); $('receivedArt').addEventListener('change', () => setReceived('art', $('receivedArt').files[0])); $('receivedToken').addEventListener('change', () => setReceived('token', $('receivedToken').files[0]));
+$('sourceFile').addEventListener('change', () => { const files = Array.from($('sourceFile').files); $('sourceFile').value = ''; addFiles(files); }); $('receivedArt').addEventListener('change', () => setReceived('art', $('receivedArt').files[0])); $('receivedToken').addEventListener('change', () => setReceived('token', $('receivedToken').files[0]));
 setupDrop($('sourceDrop'), addFiles, true); setupDrop($('artDrop'), file => setReceived('art', file)); setupDrop($('tokenDrop'), file => setReceived('token', file));
 $('clearAttachments').addEventListener('click', clearFile);
 $('encodeButton').addEventListener('click', encode); $('decodeButton').addEventListener('click', decode); document.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', cancelTask));
