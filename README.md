@@ -4,6 +4,11 @@ Interfaz móvil con temas claro y oscuro. El botón de sol/luna de la cabecera
 cambia el tema y recuerda la selección en este navegador. La primera visita
 usa la preferencia de color del dispositivo.
 
+La identidad visual utiliza el logo oficial suministrado por el propietario,
+conservado sin alterar en `public/assets/nebo-logo-original.png`. El encuadre CSS
+elige la variante superior para el tema claro y la inferior para el oscuro.
+La interfaz combina tonos perla y carbón; los estados conservan su color semántico.
+
 Repositorio: https://github.com/Adminnebo/NEBO-SECURITY
 
 Web: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site

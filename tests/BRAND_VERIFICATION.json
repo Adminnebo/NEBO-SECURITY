@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "date": "2026-09-18",
+  "environment": "Local Edge / Playwright",
+  "logo_sha256": "6ba69466582930342388213116c8abdd96db6337f590fb1325b5b03d38d75dd0",
+  "supplied_logo_bytes_preserved": true,
+  "logo_size": [
+    1834,
+    1800
+  ],
+  "logo_variants": "CSS viewport selects supplied light/dark variant; source PNG unchanged",
+  "visual_widths_checked": [
+    320,
+    390,
+    1440
+  ],
+  "themes_checked": [
+    "light",
+    "dark"
+  ],
+  "horizontal_overflow": false,
+  "small_light_supporting_text_color": "#666666",
+  "help_and_theme_minimum_target_px": 44,
+  "theme_reload_persistence": true,
+  "theme_preserves_selected_file": true,
+  "worker_ready": true,
+  "page_errors": [],
+  "functional_code_changed": false
+}
