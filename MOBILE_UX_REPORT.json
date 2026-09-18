@@ -1,0 +1,262 @@
+{
+  "status": "PASS",
+  "base_url": "http://127.0.0.1:8772",
+  "label": "local",
+  "browser": "Microsoft Edge / Chromium",
+  "checks": [
+    {
+      "name": "360px sender wizard, back navigation and three real downloads",
+      "passed": true,
+      "input_method": "file_upload",
+      "steps": [
+        {
+          "viewport_width": 360,
+          "document_width": 360,
+          "overflow": false,
+          "visible_touch_targets": 5,
+          "minimum_touch_width": 141,
+          "minimum_touch_height": 44,
+          "minimum_input_font": null
+        },
+        {
+          "viewport_width": 360,
+          "document_width": 360,
+          "overflow": false,
+          "visible_touch_targets": 15,
+          "minimum_touch_width": 74,
+          "minimum_touch_height": 44,
+          "minimum_input_font": 16
+        },
+        {
+          "viewport_width": 360,
+          "document_width": 360,
+          "overflow": false,
+          "visible_touch_targets": 12,
+          "minimum_touch_width": 48.92,
+          "minimum_touch_height": 44,
+          "minimum_input_font": 16
+        }
+      ],
+      "artwork_bytes": 8388628,
+      "token_bytes": 449,
+      "separate_key_filename": "ASTRA-clave-secreta.key.txt",
+      "original_sha256": "2ce97c903b252ff58162334236457f393cd7dc41c0d9d74d18844ed142651669",
+      "state_preserved_across_navigation": true,
+      "native_share": {
+        "tested_via_local_stub_only": true,
+        "actual_external_sharing": false,
+        "file_count": 2,
+        "pair_hashes_match_downloads": true,
+        "token_sent_as_txt": true,
+        "secret_excluded": true
+      }
+    },
+    {
+      "name": "360px fresh offline receiver recovers exact original",
+      "passed": true,
+      "original_sha256": "2ce97c903b252ff58162334236457f393cd7dc41c0d9d74d18844ed142651669",
+      "reconstructed_sha256": "2ce97c903b252ff58162334236457f393cd7dc41c0d9d74d18844ed142651669",
+      "filename_preserved": true,
+      "network_attempts": [],
+      "input_metrics": {
+        "viewport_width": 360,
+        "document_width": 360,
+        "overflow": false,
+        "visible_touch_targets": 5,
+        "minimum_touch_width": 163,
+        "minimum_touch_height": 47,
+        "minimum_input_font": 16
+      },
+      "result_metrics": {
+        "viewport_width": 360,
+        "document_width": 360,
+        "overflow": false,
+        "visible_touch_targets": 9,
+        "minimum_touch_width": 74,
+        "minimum_touch_height": 44,
+        "minimum_input_font": null
+      },
+      "wrong_key_error_visible": false
+    },
+    {
+      "name": "390px sender wizard, back navigation and three real downloads",
+      "passed": true,
+      "input_method": "typed_text",
+      "steps": [
+        {
+          "viewport_width": 390,
+          "document_width": 390,
+          "overflow": false,
+          "visible_touch_targets": 5,
+          "minimum_touch_width": 156,
+          "minimum_touch_height": 44,
+          "minimum_input_font": null
+        },
+        {
+          "viewport_width": 390,
+          "document_width": 390,
+          "overflow": false,
+          "visible_touch_targets": 15,
+          "minimum_touch_width": 74,
+          "minimum_touch_height": 44,
+          "minimum_input_font": 16
+        },
+        {
+          "viewport_width": 390,
+          "document_width": 390,
+          "overflow": false,
+          "visible_touch_targets": 12,
+          "minimum_touch_width": 48.92,
+          "minimum_touch_height": 44,
+          "minimum_input_font": 16
+        }
+      ],
+      "artwork_bytes": 8388628,
+      "token_bytes": 449,
+      "separate_key_filename": "ASTRA-clave-secreta.key.txt",
+      "original_sha256": "fb28a75f3e5e44d04193419d5bb1ee4ddeaff976430002cc12ab5e20e0b291f5",
+      "state_preserved_across_navigation": true,
+      "native_share": {
+        "tested_via_local_stub_only": true,
+        "actual_external_sharing": false,
+        "file_count": 2,
+        "pair_hashes_match_downloads": true,
+        "token_sent_as_txt": true,
+        "secret_excluded": true
+      }
+    },
+    {
+      "name": "390px fresh offline receiver recovers exact original",
+      "passed": true,
+      "original_sha256": "fb28a75f3e5e44d04193419d5bb1ee4ddeaff976430002cc12ab5e20e0b291f5",
+      "reconstructed_sha256": "fb28a75f3e5e44d04193419d5bb1ee4ddeaff976430002cc12ab5e20e0b291f5",
+      "filename_preserved": true,
+      "network_attempts": [],
+      "input_metrics": {
+        "viewport_width": 390,
+        "document_width": 390,
+        "overflow": false,
+        "visible_touch_targets": 5,
+        "minimum_touch_width": 178,
+        "minimum_touch_height": 47,
+        "minimum_input_font": 16
+      },
+      "result_metrics": {
+        "viewport_width": 390,
+        "document_width": 390,
+        "overflow": false,
+        "visible_touch_targets": 9,
+        "minimum_touch_width": 74,
+        "minimum_touch_height": 44,
+        "minimum_input_font": null
+      },
+      "wrong_key_error_visible": true
+    },
+    {
+      "name": "430px sender wizard, back navigation and three real downloads",
+      "passed": true,
+      "input_method": "file_upload",
+      "steps": [
+        {
+          "viewport_width": 430,
+          "document_width": 430,
+          "overflow": false,
+          "visible_touch_targets": 5,
+          "minimum_touch_width": 176,
+          "minimum_touch_height": 44,
+          "minimum_input_font": null
+        },
+        {
+          "viewport_width": 430,
+          "document_width": 430,
+          "overflow": false,
+          "visible_touch_targets": 15,
+          "minimum_touch_width": 74,
+          "minimum_touch_height": 44,
+          "minimum_input_font": 16
+        },
+        {
+          "viewport_width": 430,
+          "document_width": 430,
+          "overflow": false,
+          "visible_touch_targets": 12,
+          "minimum_touch_width": 48.92,
+          "minimum_touch_height": 44,
+          "minimum_input_font": 16
+        }
+      ],
+      "artwork_bytes": 8388628,
+      "token_bytes": 449,
+      "separate_key_filename": "ASTRA-clave-secreta.key.txt",
+      "original_sha256": "062f754a84340a38d5afea643b9f74ffa353cb0f3014e83765bdf3756851e8d6",
+      "state_preserved_across_navigation": true,
+      "native_share": {
+        "tested_via_local_stub_only": true,
+        "actual_external_sharing": false,
+        "file_count": 2,
+        "pair_hashes_match_downloads": true,
+        "token_sent_as_txt": true,
+        "secret_excluded": true
+      }
+    },
+    {
+      "name": "430px fresh offline receiver recovers exact original",
+      "passed": true,
+      "original_sha256": "062f754a84340a38d5afea643b9f74ffa353cb0f3014e83765bdf3756851e8d6",
+      "reconstructed_sha256": "062f754a84340a38d5afea643b9f74ffa353cb0f3014e83765bdf3756851e8d6",
+      "filename_preserved": true,
+      "network_attempts": [],
+      "input_metrics": {
+        "viewport_width": 430,
+        "document_width": 430,
+        "overflow": false,
+        "visible_touch_targets": 5,
+        "minimum_touch_width": 198,
+        "minimum_touch_height": 47,
+        "minimum_input_font": 16
+      },
+      "result_metrics": {
+        "viewport_width": 430,
+        "document_width": 430,
+        "overflow": false,
+        "visible_touch_targets": 9,
+        "minimum_touch_width": 74,
+        "minimum_touch_height": 44,
+        "minimum_input_font": null
+      },
+      "wrong_key_error_visible": false
+    },
+    {
+      "name": "1440px desktop controls and real encoding remain functional",
+      "passed": true,
+      "metrics": {
+        "viewport_width": 1440,
+        "document_width": 1440,
+        "overflow": false,
+        "visible_touch_targets": 29,
+        "minimum_touch_width": 29.69,
+        "minimum_touch_height": 14.84,
+        "minimum_input_font": 10
+      }
+    }
+  ],
+  "browser_errors": [],
+  "secrets_in_report": false,
+  "elapsed_seconds": 35.469,
+  "screenshots": [
+    "tests/mobile-ui/local_1440_desktop_regression.png",
+    "tests/mobile-ui/local_360_01_archivo.png",
+    "tests/mobile-ui/local_360_02_portada.png",
+    "tests/mobile-ui/local_360_03_resultado.png",
+    "tests/mobile-ui/local_360_05_original_recuperado.png",
+    "tests/mobile-ui/local_390_01_archivo.png",
+    "tests/mobile-ui/local_390_02_portada.png",
+    "tests/mobile-ui/local_390_03_resultado.png",
+    "tests/mobile-ui/local_390_04_error_visible.png",
+    "tests/mobile-ui/local_390_05_original_recuperado.png",
+    "tests/mobile-ui/local_430_01_archivo.png",
+    "tests/mobile-ui/local_430_02_portada.png",
+    "tests/mobile-ui/local_430_03_resultado.png",
+    "tests/mobile-ui/local_430_05_original_recuperado.png"
+  ]
+}

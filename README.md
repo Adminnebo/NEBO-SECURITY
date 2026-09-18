@@ -10,6 +10,15 @@ funciones criptográficas proceden de Web Crypto.
 
 ## Primera prueba privada
 
+En el teléfono, la interfaz guía el envío en tres pasos: **Archivo → Portada →
+Compartir**. La barra inferior permite avanzar, volver y cambiar a **Abrir
+recibido**. Las opciones adicionales están plegadas. El enlace es el mismo en
+móvil y escritorio; no hace falta instalar una aplicación.
+
+Si el navegador admite compartir archivos, aparece un botón para enviar el
+PNG y el token con el menú del dispositivo. La clave secreta queda fuera de
+esa selección. También siguen disponibles las descargas individuales.
+
 1. Selecciona un PDF, imagen o audio; también puedes escribir texto o grabar voz.
 2. Elige modo privado, una portada sugerida o propia, y la resolución. La
    portada queda visible: usa una imagen que puedas compartir.
@@ -65,6 +74,9 @@ pesar mucho más que el original. La aplicación muestra el tamaño real del tok
 - `public/spec/SECURITY.md`: controles, modelo de amenaza y límites reales.
 - `tests/secure_audit_core.py`: validación independiente de criptografía/formato.
 - `tests/`: pruebas de interfaz, voz, conservación y compatibilidad.
+- `tests/mobile_ux_test.py`: recorridos móviles con descargas reales,
+  reconstrucción sin conexión y controles táctiles. El informe indica los
+  tamaños emulados; no equivale a probar un teléfono físico.
 - `public/assets/IMAGE_PROVENANCE.json`: prompts y procedencia de portadas.
 
 Se usan cifrado autenticado, claves independientes, validación de entradas,
@@ -72,6 +84,15 @@ protección de metadatos, recursos locales, CSP y HTTPS. No se implementan
 Double Ratchet, garantías poscuánticas ni certificación externa. Cifrar para
 el receptor no firma la identidad del remitente. Las pruebas automatizadas no
 sustituyen una auditoría externa para datos de alta sensibilidad.
+
+En la publicación V2 se comprobó que el alojamiento no aplica el archivo
+`public/_headers`: las cabeceras HTTP adicionales solicitadas no aparecieron
+en la respuesta. La CSP de la página se declara mediante una etiqueta meta.
+No se atribuye al despliegue protección de cabeceras que no se haya observado.
+
+El ZIP de entrega incluye casos de prueba sintéticos y los informes reales de
+la web pública. No incluye claves privadas ni secretos de mensajes del usuario.
+Las instrucciones para repetir las pruebas están en `SECURITY_TEST_REPORT.md`.
 
 ## Ejecutar localmente
 

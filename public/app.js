@@ -7,8 +7,12 @@ const state = { file: null, sourceURL: null, urls: [], workers: { classic: null,
   pending: null, busy: false, activeMode: 'sender', recording: null,
   preparingMicrophone: false, receivedArt: null, receivedToken: null, target: null, taskSerial: 0,
   cover: 'mountain', coverFile: null, coverURL: null, identity: null, recipient: null,
-  tokenFormat: null, tokenMode: null, secretURL: null, coverVersion: 0 };
+  tokenFormat: null, tokenMode: null, secretURL: null, coverVersion: 0, mobileStep: 0, shareFiles: null };
+const mobileScreen = window.matchMedia('(max-width: 760px)');
 const el = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
+const sharePackageButton = el('button', 'button secondary wide hidden', 'Compartir PNG y token ↗');
+sharePackageButton.id = 'sharePackage'; sharePackageButton.type = 'button';
+document.querySelector('.download-pair').after(sharePackageButton);
 const formatBytes = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(2)} MB`;
 const formatNumber = value => Number(value).toLocaleString('es-DO');
 let toastTimer;
@@ -17,14 +21,80 @@ window.ASTRA_READY = new Promise((resolve, reject) => { resolveWorkerReady = res
 window.ASTRA_READY.catch(() => {});
 
 function toast(message) { $('toast').textContent = message; $('toast').classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.add('hidden'), 5000); }
-function errorFor(mode, message = '') { const node = $(mode + 'Error'); node.textContent = message; node.classList.toggle('hidden', !message); }
+function errorFor(mode, message = '') { const node = $(mode + 'Error'); node.textContent = message; node.classList.toggle('hidden', !message); if (message && !state.busy) revealMobileError(mode); }
 function objectURL(blob) { const url = URL.createObjectURL(blob); state.urls.push(url); return url; }
+function revealMobileError(mode) {
+  if (!mobileScreen.matches || state.activeMode !== mode) return;
+  document.activeElement?.blur();
+  requestAnimationFrame(() => {
+    const error = $(mode + 'Error'); if (error.classList.contains('hidden')) { mobileScroll(); return; }
+    const rect = error.getBoundingClientRect(), available = $('mobileDock').getBoundingClientRect().top;
+    window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - Math.max(16, (available - rect.height) / 2)), behavior: 'instant' });
+  });
+}
+function mobileScroll() {
+  if (!mobileScreen.matches) return;
+  document.activeElement?.blur();
+  requestAnimationFrame(() => {
+    const target = state.activeMode === 'sender' ? $('composeSteps') : $('receiverPanel');
+    target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  });
+}
+function syncMobile() {
+  const receiving = state.activeMode === 'receiver';
+  document.body.dataset.mobileStep = String(state.mobileStep);
+  document.body.dataset.view = state.activeMode;
+  $('composeSteps').classList.toggle('hidden', receiving);
+  $('composeSteps').querySelectorAll('li').forEach((step, index) => {
+    step.classList.toggle('current', index === state.mobileStep); step.classList.toggle('complete', index < state.mobileStep);
+    if (index === state.mobileStep) step.setAttribute('aria-current', 'step'); else step.removeAttribute('aria-current');
+  });
+  $('mobileIntroTitle').textContent = receiving ? 'Abre tu mensaje.' : 'Comparte algo privado.';
+  $('mobileIntroDescription').textContent = receiving ? 'Recupera el original desde tu teléfono.' : 'Tu archivo, protegido dentro de una imagen.';
+  $('senderStepTitle').textContent = mobileScreen.matches && state.mobileStep === 1 ? 'Dale tu estilo' : 'Elige tu archivo';
+  $('senderStepDescription').textContent = mobileScreen.matches && state.mobileStep === 1 ? 'Elige una portada y la calidad de la imagen.' : 'Se procesa en este dispositivo.';
+  $('senderPanel').querySelector('.input-panel .step-number').textContent = mobileScreen.matches && state.mobileStep === 1 ? '02' : '01';
+  $('senderPanel').querySelector('.output-panel .step-number').textContent = mobileScreen.matches ? '03' : '02';
+  for (const [id, active] of [['mobileSendTab', !receiving], ['mobileReceiveTab', receiving]]) {
+    $(id).classList.toggle('active', active); $(id).setAttribute('aria-pressed', String(active));
+    $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  }
+  const button = $('mobileAction'), back = $('mobileBack'), hint = $('mobileHint');
+  const recovered = $('receiverPanel').classList.contains('has-result');
+  back.classList.toggle('hidden', receiving ? !recovered : state.mobileStep === 0);
+  back.disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  button.disabled = state.busy || state.preparingMicrophone;
+  if (state.busy) { button.textContent = receiving ? 'Abriendo…' : 'Creando envío…'; hint.textContent = 'Procesando en tu dispositivo. Espera un momento.'; }
+  else if (receiving) {
+    button.textContent = recovered ? 'Guardar archivo original ↓' : 'Abrir y verificar →';
+    button.disabled = !recovered && $('decodeButton').disabled;
+    hint.textContent = recovered ? 'Archivo original recuperado y verificado.' : !state.receivedArt || !state.receivedToken ? 'Selecciona el PNG y el token que recibiste.' : state.tokenMode === 'secret' ? 'Introduce también la clave que recibiste aparte.' : 'Todo se reconstruye en tu navegador.';
+  } else if (state.recording) { button.textContent = 'Terminar grabación ■'; hint.textContent = 'Tu nota de voz se está grabando.'; }
+  else if (state.mobileStep === 0) {
+    button.textContent = 'Elegir portada →'; button.disabled = !state.file || state.preparingMicrophone;
+    hint.textContent = state.file ? `${state.file.name} · ${formatBytes(state.file.size)}` : 'Elige un archivo, escribe o graba una nota.';
+  } else if (state.mobileStep === 1) {
+    button.textContent = $('encodingMode').value === 'private' ? 'Crear envío privado →' : 'Crear envío sin cifrado →'; button.disabled = $('encodeButton').disabled;
+    hint.textContent = button.disabled ? 'Confirma la identidad destinataria para continuar.' : $('encodingMode').value === 'private' ? 'Cifrado y verificado antes de compartir.' : 'El modo clásico no cifra el contenido.';
+  } else { button.textContent = 'Editar mi envío'; hint.textContent = 'Guarda la obra, el token y tu clave por separado.'; }
+  $('mobileEditReceived').classList.toggle('hidden', !recovered);
+}
+function setMobileStep(step) {
+  if (state.busy || state.recording || state.preparingMicrophone) return;
+  state.mobileStep = step; syncMobile(); mobileScroll();
+}
+function editReceived() {
+  if (state.busy) return;
+  $('receiverPanel').classList.remove('has-result'); syncMobile(); mobileScroll();
+}
 function setMode(mode) {
+  if (state.busy || state.recording || state.preparingMicrophone) return;
   state.activeMode = mode; const receiving = mode === 'receiver';
   $('senderTab').classList.toggle('active', !receiving); $('senderTab').setAttribute('aria-pressed', String(!receiving));
   $('receiverTab').classList.toggle('active', receiving); $('receiverTab').setAttribute('aria-pressed', String(receiving));
   $('senderPanel').classList.toggle('hidden', receiving); $('receiverPanel').classList.toggle('hidden', !receiving);
   const url = new URL(location.href); if (receiving) url.searchParams.set('modo', 'recibir'); else url.searchParams.delete('modo'); history.replaceState({}, '', url);
+  syncMobile();
 }
 function updateButtons() {
   const privateMode = $('encodingMode').value === 'private';
@@ -35,6 +105,8 @@ function updateButtons() {
   document.querySelectorAll('.cover-choice,input[name=accessMode]').forEach(node => { node.disabled = state.busy; });
   $('useSourceCover').disabled = state.busy || !state.file?.type.startsWith('image/');
   $('recordButton').disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  $('senderTab').disabled = $('receiverTab').disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  syncMobile();
 }
 function progress(mode, percent, message) {
   $(mode + 'Stage').textContent = message || (mode === 'sender' ? 'Creando tu envío…' : 'Reconstruyendo…');
@@ -43,13 +115,18 @@ function progress(mode, percent, message) {
 }
 function beginTask(mode) {
   const serial = ++state.taskSerial;
+  $(mode + 'Panel').classList.add('is-processing'); $(mode + 'Panel').classList.remove('has-result');
+  if (mode === 'sender') state.mobileStep = 2;
   state.busy = true; errorFor(mode); $(mode + 'Empty').classList.add('hidden'); $(mode + 'Result').classList.add('hidden'); $(mode + 'Progress').classList.remove('hidden');
   $(mode + 'ProgressText').textContent = mode === 'sender' ? 'El procesamiento ocurre en tu navegador.' : 'Comprobando la obra y su clave.';
-  progress(mode, 0, mode === 'sender' ? 'Preparando el archivo…' : 'Leyendo la obra y su clave…'); updateButtons(); return serial;
+  progress(mode, 0, mode === 'sender' ? 'Preparando el archivo…' : 'Leyendo la obra y su clave…'); updateButtons(); mobileScroll(); return serial;
 }
 function endTask(mode, failed = false) {
   state.busy = false; $(mode + 'Progress').classList.add('hidden');
-  if (failed) $(mode + 'Empty').classList.remove('hidden'); updateButtons();
+  $(mode + 'Panel').classList.remove('is-processing');
+  $(mode + 'Panel').classList.toggle('has-result', !failed);
+  if (failed) { $(mode + 'Empty').classList.remove('hidden'); if (mode === 'sender') state.mobileStep = state.file ? 1 : 0; }
+  updateButtons(); if (failed) revealMobileError(mode);
 }
 function startWorker(engine) {
   try {
@@ -111,6 +188,7 @@ function selectFile(file) {
   if (file.type.startsWith('audio/')) { const audio = el('audio'); audio.controls = true; audio.src = state.sourceURL; info.append(audio); }
   selection.append(info); const remove = el('button', 'remove-file', '×'); remove.type = 'button'; remove.setAttribute('aria-label', 'Quitar archivo seleccionado'); remove.addEventListener('click', clearFile); selection.append(remove); selection.classList.remove('hidden');
   $('senderResult').classList.add('hidden'); $('senderEmpty').classList.remove('hidden');
+  $('senderPanel').classList.remove('has-result');
   updateButtons(); return true;
 }
 function scaledDimensions(width, height, maxPixels = 900000) { const scale = Math.min(1, Math.sqrt(maxPixels / (width * height))); return [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]; }
@@ -161,6 +239,7 @@ async function prepareCover() {
 function updateEncodingMode() {
   const privateMode = $('encodingMode').value === 'private';
   $('coverControls').classList.toggle('hidden', !privateMode); $('protectionControls').classList.toggle('hidden', !privateMode);
+  $('advancedAccess').classList.toggle('hidden', !privateMode); $('encodingSummary').textContent = privateMode ? 'Privado' : 'Sin cifrado';
   $('modeExplanation').textContent = privateMode ? 'Una portada a color transporta el archivo cifrado. Para recuperarlo hacen falta la obra, el token y la clave secreta o la identidad destinataria.' : 'Reorganiza los píxeles de una representación del archivo y conserva su paleta. La obra y el token permiten recuperarlo sin una clave secreta. Este modo no cifra el contenido.';
   $('encodeButton').replaceChildren(document.createTextNode(privateMode ? 'Crear envío privado' : 'Crear permutación clásica'), el('span', '', '→'));
   $('senderOutputSubtitle').textContent = privateMode ? 'Obra y token. El acceso se comparte por separado.' : 'Obra y token. Permutación clásica sin cifrado.';
@@ -255,6 +334,10 @@ async function encode() {
     $('artworkImage').src = artURL; $('artworkView').href = artURL;
     $('downloadArt').href = artURL; $('downloadArt').download = `${base}-ASTRA-obra.png`;
     $('downloadToken').href = tokenURL; $('downloadToken').download = `${base}-ASTRA-token.json`;
+    // Share only the transport files. The recovery secret never enters this list.
+    state.shareFiles = [new File([art], `${base}-ASTRA-obra.png`, { type: 'image/png' }), new File([token], `${base}-ASTRA-token.txt`, { type: 'text/plain' })];
+    let canShare = false; try { canShare = Boolean(navigator.share && navigator.canShare?.({ files: state.shareFiles })); } catch (_) {}
+    sharePackageButton.classList.toggle('hidden', !canShare);
     $('artworkCaption').textContent = privateMode ? 'Imagen portadora con datos cifrados; utiliza colores de referencia. No es una permutación del documento.' : 'Permutación clásica de la representación del archivo. Conserva sus píxeles y su paleta; no cifra el contenido.';
     $('senderStats').replaceChildren(el('span', '', `${result.width} × ${result.height}`), el('span', '', `Token: ${formatBytes(result.token_bytes ?? token.size)}`), el('span', '', `${formatNumber(result.pixel_count)} píxeles`));
     if (privateMode) $('senderStats').append(el('span', '', `${result.bits_per_channel ?? result.bits} bits por canal`));
@@ -269,13 +352,14 @@ async function encode() {
     $('conservationExplanation').textContent = privateMode ? 'El archivo original, su nombre y sus metadatos de recuperación se cifran con AES-256-GCM. Los datos cifrados se insertan en los bits menos significativos de la portada visible. El token permite localizar y autenticar el contenido; requiere además la clave secreta o la identidad privada destinataria.' : 'La representación reversible incluye el archivo original completo y, cuando está disponible, una vista previa. Una permutación conserva todos los píxeles de esa representación. La obra y el token bastan para recuperar el original; no hay cifrado.';
     $('senderHash').textContent = `SHA-256 del archivo original: ${result.source_sha256}`;
     $('senderResult').classList.remove('hidden'); endTask('sender');
-    if (window.innerWidth < 710) $('senderResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    mobileScroll();
   } catch (error) { if (state.taskSerial === serial) { errorFor('sender', error.code === 'CAPACITY' ? `El archivo no cabe en la portada elegida${error.capacity ? ` (capacidad: ${formatBytes(error.capacity)})` : ''}. Selecciona una resolución mayor; para los archivos más grandes usa Cuadrado · 4096 px.` : error.message || String(error)); endTask('sender', true); } }
 }
 async function setReceived(kind, file) {
   if (!file || state.busy) return;
   const artwork = kind === 'art'; if (file.size > (artwork ? 180 : 80) * 1048576) { errorFor('receiver', 'Este archivo supera el tamaño admitido para la reconstrucción en el navegador.'); return; }
   state[artwork ? 'receivedArt' : 'receivedToken'] = file;
+  $('receiverPanel').classList.remove('has-result'); $('receiverResult').classList.add('hidden');
   $(artwork ? 'receivedArtName' : 'receivedTokenName').textContent = `${file.name} · ${formatBytes(file.size)}`;
   $(artwork ? 'artDrop' : 'tokenDrop').classList.add('selected'); $(artwork ? 'artDrop' : 'tokenDrop').querySelector('.file-plus').textContent = '✓'; errorFor('receiver');
   if (!artwork) {
@@ -307,7 +391,7 @@ async function decode() {
     $('restoredFileInfo').replaceChildren(); const info = el('div'); info.append(el('strong', '', name), el('small', '', `${formatBytes(file.size)} · Archivo original completo`)); $('restoredFileInfo').append(el('span', '', '✓'), info);
     $('receiverHash').textContent = `SHA-256 verificado del archivo original y reconstruido: ${result.sha256 || result.source_sha256 || result.recovered_sha256}`;
     await showRestored(file, url, name); $('receiverResult').classList.remove('hidden'); endTask('receiver');
-    if (window.innerWidth < 710) $('receiverResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    mobileScroll();
   } catch (error) { if (state.taskSerial === serial) { errorFor('receiver', error.message || String(error)); endTask('receiver', true); } }
 }
 async function showRestored(blob, url, name) {
@@ -366,13 +450,26 @@ function setupDrop(node, callback) {
 }
 
 $('senderTab').addEventListener('click', () => setMode('sender')); $('receiverTab').addEventListener('click', () => setMode('receiver'));
+$('mobileSendTab').addEventListener('click', () => { setMode('sender'); mobileScroll(); });
+$('mobileReceiveTab').addEventListener('click', () => { setMode('receiver'); mobileScroll(); });
+$('mobileBack').addEventListener('click', () => { if (state.activeMode === 'receiver') editReceived(); else setMobileStep(Math.max(0, state.mobileStep - 1)); });
+$('mobileEditReceived').addEventListener('click', editReceived);
+$('mobileAction').addEventListener('click', () => {
+  if (state.busy || state.preparingMicrophone) return;
+  if (state.activeMode === 'receiver') {
+    if ($('receiverPanel').classList.contains('has-result')) $('downloadRestored').click(); else decode();
+  } else if (state.recording) stopRecording(false);
+  else if (state.mobileStep === 0 && state.file) setMobileStep(1);
+  else if (state.mobileStep === 1) encode();
+  else if (state.mobileStep === 2) setMobileStep(1);
+});
 $('sourceFile').addEventListener('change', () => selectFile($('sourceFile').files[0])); $('receivedArt').addEventListener('change', () => setReceived('art', $('receivedArt').files[0])); $('receivedToken').addEventListener('change', () => setReceived('token', $('receivedToken').files[0]));
 setupDrop($('sourceDrop'), selectFile); setupDrop($('artDrop'), file => setReceived('art', file)); setupDrop($('tokenDrop'), file => setReceived('token', file));
 $('encodeButton').addEventListener('click', encode); $('decodeButton').addEventListener('click', decode); document.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', cancelTask));
 $('recordButton').addEventListener('click', startRecording); $('stopRecord').addEventListener('click', () => stopRecording(false)); $('cancelRecord').addEventListener('click', () => stopRecording(true));
 $('textButton').addEventListener('click', () => { $('textEditor').classList.toggle('hidden'); if (!$('textEditor').classList.contains('hidden')) $('textInput').focus(); });
 $('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-astra.txt', { type: 'text/plain' })); });
-$('demoButton').addEventListener('click', async () => { if (state.busy) return; $('demoButton').disabled = true; errorFor('sender'); try { const response = await fetch(new URL('./assets/documento-ejemplo.pdf', location.href)); if (!response.ok) throw new Error('No se pudo cargar el documento de ejemplo. Puedes seleccionar tu propio archivo.'); const file = new File([await response.blob()], 'documento-ejemplo.pdf', { type: 'application/pdf' }); if (selectFile(file)) await encode(); } catch (error) { errorFor('sender', error.message); } finally { updateButtons(); } });
+$('demoButton').addEventListener('click', async () => { if (state.busy) return; $('demoButton').disabled = true; errorFor('sender'); try { const response = await fetch(new URL('./assets/documento-ejemplo.pdf', location.href)); if (!response.ok) throw new Error('No se pudo cargar el documento de ejemplo. Puedes seleccionar tu propio archivo.'); const file = new File([await response.blob()], 'documento-ejemplo.pdf', { type: 'application/pdf' }); if (selectFile(file)) { if (mobileScreen.matches) setMobileStep(1); else await encode(); } } catch (error) { errorFor('sender', error.message); } finally { updateButtons(); } });
 document.querySelectorAll('.copy-receiver').forEach(button => button.addEventListener('click', copyReceiverLink));
 document.querySelectorAll('.cover-choice').forEach(button => button.addEventListener('click', () => chooseCover(button.dataset.cover)));
 $('encodingMode').addEventListener('change', updateEncodingMode);
@@ -382,7 +479,7 @@ $('coverFormat').addEventListener('change', () => { const square = $('coverForma
 $('coverResolution').addEventListener('change', describeCover); $('coverStyle').addEventListener('change', describeCover);
 $('coverFile').addEventListener('change', () => { const file = $('coverFile').files[0]; if (!file) return; if (!file.type.startsWith('image/') || file.size > MAX_FILE_BYTES) { errorFor('sender', 'Selecciona una imagen de portada de hasta 20 MB.'); return; } chooseCover('custom', file); });
 $('useSourceCover').addEventListener('click', () => { if (state.file?.type.startsWith('image/')) chooseCover('source'); });
-document.querySelectorAll('input[name=accessMode]').forEach(input => input.addEventListener('change', () => { $('recipientControls').classList.toggle('hidden', document.querySelector('input[name=accessMode]:checked').value !== 'recipient'); updateButtons(); }));
+document.querySelectorAll('input[name=accessMode]').forEach(input => input.addEventListener('change', () => { const recipient = document.querySelector('input[name=accessMode]:checked').value === 'recipient'; $('recipientControls').classList.toggle('hidden', !recipient); $('accessSummary').textContent = recipient ? 'Identidad destinataria' : 'Clave secreta'; updateButtons(); }));
 $('recipientFile').addEventListener('change', async () => {
   state.recipient = null; $('recipientVerified').checked = false; $('recipientSummary').classList.add('hidden'); updateButtons(); const file = $('recipientFile').files[0]; if (!file) return;
   try { state.recipient = await loadRecipientBundle(file); $('recipientFingerprint').textContent = await fingerprintPublicBundle(state.recipient); $('recipientSummary').classList.remove('hidden'); errorFor('sender'); }
@@ -391,12 +488,30 @@ $('recipientFile').addEventListener('change', async () => {
 $('recipientVerified').addEventListener('change', updateButtons);
 $('showSecret').addEventListener('click', () => { const show = $('recoverySecret').type === 'password'; $('recoverySecret').type = show ? 'text' : 'password'; $('showSecret').textContent = show ? 'Ocultar' : 'Mostrar'; $('showSecret').setAttribute('aria-pressed', String(show)); });
 $('copySecret').addEventListener('click', copySecret);
+sharePackageButton.addEventListener('click', async () => {
+  if (!state.shareFiles || state.busy) return;
+  sharePackageButton.disabled = true;
+  try { await navigator.share({ files: state.shareFiles, title: 'Envío ASTRA' }); toast('Recuerda compartir la clave secreta por otro canal.'); }
+  catch (error) { if (error.name !== 'AbortError') toast('Este dispositivo no pudo compartir los archivos. Usa los botones de descarga.'); }
+  finally { sharePackageButton.disabled = false; }
+});
 $('receivedSecretFile').addEventListener('change', async () => { const file = $('receivedSecretFile').files[0]; if (!file) return; if (file.size > 2048) { errorFor('receiver', 'Este archivo no parece una clave secreta ASTRA. Selecciona el archivo .key.txt que recibiste.'); return; } const secret = (await file.text()).trim(); if (!/^[A-Za-z0-9_-]{43}$/.test(secret)) { errorFor('receiver', 'La clave debe contener los 43 caracteres de la clave secreta ASTRA.'); return; } $('receivedSecret').value = secret; errorFor('receiver'); toast('Clave secreta cargada en este navegador.'); });
 $('createIdentity').addEventListener('click', async () => { $('createIdentity').disabled = true; try { state.identity = await createIdentity(); await refreshIdentity(); toast('Identidad creada. Descarga su archivo público para compartirlo.'); } catch (error) { $('identityStatus').textContent = error.message; } finally { updateButtons(); } });
 $('exportIdentity').addEventListener('click', async () => { try { const json = await exportPublicIdentity(state.identity); const link = el('a'); link.href = objectURL(new Blob([json], { type: 'application/json' })); link.download = 'ASTRA-identidad-publica.json'; document.body.append(link); link.click(); link.remove(); } catch (error) { $('identityStatus').textContent = error.message; } });
 $('clearIdentity').addEventListener('click', async () => { if (!window.confirm('Si eliminas esta identidad, no podrás abrir los envíos dirigidos a ella. ¿Eliminar identidad de este navegador?')) return; try { await clearIdentity(); await refreshIdentity(); toast('Identidad local eliminada.'); } catch (error) { $('identityStatus').textContent = error.message; } });
 document.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault(); }); document.addEventListener('drop', event => event.preventDefault());
 window.addEventListener('beforeunload', () => { state.recording?.stream.getTracks().forEach(track => track.stop()); });
+function applyResponsiveLayout() {
+  $('advancedOptions').open = !mobileScreen.matches;
+  $('advancedAccess').open = !mobileScreen.matches || document.querySelector('input[name=accessMode]:checked').value === 'recipient';
+  const names = mobileScreen.matches ? ['Horizontal', 'Vertical', 'Cuadrado'] : ['Horizontal · 3:2', 'Vertical · 2:3', 'Cuadrado · 1:1'];
+  Array.from($('coverFormat').options).forEach((option, i) => { option.textContent = names[i]; });
+  $('sourceDrop').querySelector('small').textContent = mobileScreen.matches ? 'Hasta 20 MB · Sin subirlo al servidor' : 'Imágenes, PDF, texto y audio · Hasta 20 MB';
+  syncMobile();
+}
+mobileScreen.addEventListener('change', applyResponsiveLayout);
+document.querySelector('.help-link').addEventListener('click', () => { document.body.classList.add('mobile-help-open'); });
+applyResponsiveLayout();
 setMode(new URLSearchParams(location.search).get('modo') === 'recibir' ? 'receiver' : 'sender'); updateEncodingMode(); describeCover();
 if (!window.Worker || !window.crypto?.subtle) { $('compatibility').textContent = 'Usa un navegador actualizado y abre esta página mediante HTTPS para procesar y verificar archivos localmente.'; $('compatibility').classList.remove('hidden'); }
 startWorker('classic'); startWorker('secure'); refreshIdentity();
