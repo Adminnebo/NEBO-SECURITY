@@ -215,8 +215,10 @@ def bad_rank_token(token_bytes):
 def audit_recipient_ui(browser, args, manifest, results):
     """Exercise actual file inputs, reconstruction button, and download link."""
     context = browser.new_context(accept_downloads=True, viewport={"width": 1440, "height": 1080})
+    assert context.cookies() == []
     page = context.new_page()
-    page.goto(args.base_url, wait_until="networkidle")
+    response = page.goto(args.base_url, wait_until="networkidle")
+    assert response is not None and response.status == 200, "Anonymous recipient page load failed"
     page.wait_for_function("document.body.dataset.workerReady === 'true'", timeout=30000)
     blocked = []
     def no_network(route):
@@ -258,6 +260,7 @@ def write_report(report):
         "", f"Result: **{report['status']}**. {len(report['checks'])} checks completed in {report['seconds']} seconds.",
         "", f"Application tested: {report['base_url']}",
         "", "Browser: Microsoft Edge controlled through Playwright. The sender and receiver used separate browser contexts, with separate JavaScript state and workers. The receiving context never received the original file or target landscape.",
+        "", "Each browser context started with empty cookies and no saved storage state. No credentials, account session, authorization headers, or authenticated browser profile were supplied. The application page returned HTTP 200 in these contexts.",
         "", "After the static page and worker had loaded, all subsequent network requests were intercepted and aborted. This tests reconstruction after loading the application, not first-time loading without internet access. It is an isolated browser-session test, not a claim that a physical device in another location was used.",
         "", f"Worker test network attempts after cutoff: **{len(report['post_cutoff_network_attempts'])}**.",
         "", f"Actual recipient interface tested: **{report['actual_recipient_ui_tested']}**.",
@@ -297,10 +300,12 @@ def audit(args, payload, manifest):
                                             args=["--disable-gpu"])
         sender_context = browser.new_context()
         receiver_context = browser.new_context()
+        assert sender_context.cookies() == [] and receiver_context.cookies() == []
         sender = sender_context.new_page()
         receiver = receiver_context.new_page()
         for page in (sender, receiver):
-            page.goto(args.base_url, wait_until="networkidle")
+            response = page.goto(args.base_url, wait_until="networkidle")
+            assert response is not None and response.status == 200, f"Anonymous app load failed: {response.status if response else 'no HTTP response'}"
             page.evaluate(WORKER_BOOTSTRAP)
         blocked = []
         def no_network(route):
@@ -395,6 +400,8 @@ def audit(args, payload, manifest):
               "seconds": round(time.monotonic() - started, 3), "checks": results,
               "network_blocked_after_page_and_worker_load": True,
               "browser_context_offline_mode": True,
+              "anonymous_fresh_contexts_without_saved_cookies_or_storage": True,
+              "credentials_or_account_session_supplied": False,
               "post_cutoff_network_attempts": blocked,
               "actual_recipient_ui_tested": args.ui,
               "recipient_ui_post_cutoff_network_attempts": ui_blocked,

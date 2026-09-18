@@ -1,0 +1,46 @@
+[
+  {
+    "kind": "png_alpha",
+    "filename": "Montaña_café_🗻.png",
+    "mime": "image/png",
+    "original_bytes": 2938,
+    "original_sha256": "29155928dfdf7c37ac25217617ce921d282854449fb6a9ca63a3c18edfe98901",
+    "pixel_count": 35690,
+    "token_bytes": 7824,
+    "width": 166,
+    "height": 215
+  },
+  {
+    "kind": "pdf_two_pages",
+    "filename": "contrato_dos_páginas.pdf",
+    "mime": "application/pdf",
+    "original_bytes": 915,
+    "original_sha256": "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
+    "pixel_count": 1347720,
+    "token_bytes": 19153,
+    "width": 1021,
+    "height": 1320
+  },
+  {
+    "kind": "wav",
+    "filename": "nota_voz.wav",
+    "mime": "audio/wav",
+    "original_bytes": 8044,
+    "original_sha256": "f2f64e29bb147cc4c2cb7dfd1282cd2bdc3202bad8d4e891dc5d14283d7206d9",
+    "pixel_count": 2714,
+    "token_bytes": 7462,
+    "width": 46,
+    "height": 59
+  },
+  {
+    "kind": "text_utf8",
+    "filename": "carta_ñ_签名_🏔.txt",
+    "mime": "text/plain; charset=utf-8",
+    "original_bytes": 80,
+    "original_sha256": "a6de8317f35d020e3bd4fb092fab951b593884609288fbe35065bbc501e89b3e",
+    "pixel_count": 550288,
+    "token_bytes": 28139,
+    "width": 652,
+    "height": 844
+  }
+]

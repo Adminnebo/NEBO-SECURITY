@@ -1,7 +1,7 @@
 {
   "status": "PASS",
-  "base_url": "http://127.0.0.1:8770",
-  "seconds": 56.766,
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "seconds": 48.016,
   "checks": [
     {
       "test": "Default private UI generates independently authenticated PNG/token and separate secret",
@@ -44,12 +44,25 @@
     {
       "test": "Real text composer preserves exact UTF-8 through secure encoding",
       "passed": true
+    },
+    {
+      "test": "Authenticated HTML named .pdf is not embedded or executed; exact download remains available",
+      "passed": true
+    },
+    {
+      "test": "Ordinary PDF uses safe download card and downloads all original bytes under CSP",
+      "passed": true
     }
   ],
   "browser": "Microsoft Edge",
   "anonymous_fresh_contexts": true,
   "recipient_network_disabled_after_load": true,
   "post_cutoff_network_attempts": [],
-  "console_errors": [],
+  "console_errors": [
+    "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-l4OX1OZgOE2fIBnSI53Td3hlg4nM+CULpVBQhJq3unY='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+    "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-d//ptZ8iJ4+SBkSX/aBNUn61UCut8CdwIuL3PyskPDE='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+    "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-ZF1nhlzU6FxzTHN+NkXLPF2/IHrUkrJdCZwo8q3iVSA='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+    "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-7jbD00OQN7MCCDTVEKsO5BlfpQ2eSBb5Yh7fQMplJOY='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+  ],
   "secrets_in_report": false
 }

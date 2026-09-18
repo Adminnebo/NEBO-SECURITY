@@ -1,10 +1,12 @@
 # ASTRA web — executed browser validation
 
-Result: **PASS**. 20 checks completed in 24.438 seconds.
+Result: **PASS**. 20 checks completed in 26.938 seconds.
 
-Application tested: http://127.0.0.1:8770
+Application tested: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
 
 Browser: Microsoft Edge controlled through Playwright. The sender and receiver used separate browser contexts, with separate JavaScript state and workers. The receiving context never received the original file or target landscape.
+
+Each browser context started with empty cookies and no saved storage state. No credentials, account session, authorization headers, or authenticated browser profile were supplied. The application page returned HTTP 200 in these contexts.
 
 After the static page and worker had loaded, all subsequent network requests were intercepted and aborted. This tests reconstruction after loading the application, not first-time loading without internet access. It is an isolated browser-session test, not a claim that a physical device in another location was used.
 
@@ -67,7 +69,7 @@ The reversible matrix is explicitly preview RGB + complete encoded original-file
 ## Reproduce
 
 ```powershell
-python tests/audit_web.py --base-url http://127.0.0.1:8770 --reuse-fixtures --ui
+python tests/audit_web.py --base-url https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site --reuse-fixtures --ui
 ```
 
 The first run can omit `--reuse-fixtures` to regenerate all Python transport fixtures. The browser checks were executed on Edge; other browsers and physical devices were not part of this audit.

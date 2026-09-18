@@ -7,7 +7,8 @@ root = Path(__file__).resolve().parent
 destination = root.parent / 'ASTRA_WEB_APP_V3.zip'
 files = set(path for path in (root / 'public').rglob('*') if path.is_file())
 for pattern in ('README.md', 'PRUEBA_ENTRE_DOS_PERSONAS.txt', 'PUBLICACION.json',
-                'SECURITY_TEST_REPORT*', 'SECURITY_TEST_HEADERS.json', 'MOBILE_UX_REPORT*.json',
+                'SECURITY_TEST_REPORT*', 'SECURITY_TEST_HEADERS.json', 'MOBILE_UX_REPORT*.json', 'MOBILE_RELEASE.md',
+                'tests/mobile-ui/MOBILE_UX_REPORT_LOCAL.json', 'tests/mobile-ui/public_390_*.png',
                 'tests/*.py', 'tests/*.mjs', 'tests/*REPORT.json',
                 'tests/*requirements*.txt', 'tests/fixtures/manifest.json',
                 'tests/fixtures/*/original.bin', 'tests/fixtures/*/artwork.png',

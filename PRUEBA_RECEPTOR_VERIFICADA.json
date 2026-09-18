@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "public_sender_pair": true,
+  "independent_python_decoder": true,
+  "original_bytes": 3862,
+  "recovered_bytes": 3862,
+  "mismatching_bytes": 0,
+  "original_sha256": "01313f6c2b7685a4f1e2f11ad81b3616123fc32f3b732d6a5f926fc5a31d9060",
+  "recovered_sha256": "01313f6c2b7685a4f1e2f11ad81b3616123fc32f3b732d6a5f926fc5a31d9060",
+  "token_bytes": 195966,
+  "artwork_bytes": 2709259,
+  "receiver_zip_bytes": 370961,
+  "zip_contains_original": false
+}

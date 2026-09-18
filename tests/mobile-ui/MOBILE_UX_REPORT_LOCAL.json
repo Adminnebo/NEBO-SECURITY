@@ -1,7 +1,7 @@
 {
-  "status": "FAIL",
-  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
-  "label": "public",
+  "status": "PASS",
+  "base_url": "http://127.0.0.1:8772",
+  "label": "local",
   "browser": "Microsoft Edge / Chromium",
   "checks": [
     {
@@ -240,60 +240,23 @@
       }
     }
   ],
-  "browser_errors": [
-    {
-      "scope": "sender-360",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-rThlUXG5rMLU8Xy+AilFW2o6KtqTtRYQh/nxHf2UrR0='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "scope": "receiver-360",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-cVUnkvjYtVFd0U01ENON+k+RdZOAutDvpA3s/IGCFRE='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "scope": "sender-390",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-wcY2TYcJil6aZZOuWTiRRWOnD5mjizflTkhpyYEZBGE='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "scope": "receiver-390",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-NyCukMF4G5pBP3lWwBeiYrXmFW+m6IlVk6Anbxe27zk='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "scope": "sender-430",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-cztNRmOZvKQJgks1guF3gJKPEobw6ubtP10Edq/FK3s='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "scope": "receiver-430",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-gKT7mMQ2z24gFD7oTZJduLp+Wr++Ynr6E8itXAo9i+A='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    },
-    {
-      "scope": "desktop",
-      "type": "console",
-      "message": "Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-N7t3YajOCW6+/iY88dvp1HycdHkieXED+pe21Mm8QVs='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
-    }
-  ],
+  "browser_errors": [],
   "secrets_in_report": false,
-  "failure": "Browser errors: [{\"scope\": \"sender-360\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-rThlUXG5rMLU8Xy+AilFW2o6KtqTtRYQh/nxHf2UrR0='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}, {\"scope\": \"receiver-360\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-cVUnkvjYtVFd0U01ENON+k+RdZOAutDvpA3s/IGCFRE='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}, {\"scope\": \"sender-390\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-wcY2TYcJil6aZZOuWTiRRWOnD5mjizflTkhpyYEZBGE='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}, {\"scope\": \"receiver-390\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-NyCukMF4G5pBP3lWwBeiYrXmFW+m6IlVk6Anbxe27zk='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}, {\"scope\": \"sender-430\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-cztNRmOZvKQJgks1guF3gJKPEobw6ubtP10Edq/FK3s='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}, {\"scope\": \"receiver-430\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-gKT7mMQ2z24gFD7oTZJduLp+Wr++Ynr6E8itXAo9i+A='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}, {\"scope\": \"desktop\", \"type\": \"console\", \"message\": \"Executing inline script violates the following Content Security Policy directive 'script-src 'self' 'wasm-unsafe-eval''. Either the 'unsafe-inline' keyword, a hash ('sha256-N7t3YajOCW6+/iY88dvp1HycdHkieXED+pe21Mm8QVs='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.\"}]",
-  "elapsed_seconds": 40.343,
+  "elapsed_seconds": 35.469,
   "screenshots": [
-    "tests/mobile-ui/public_1440_desktop_regression.png",
-    "tests/mobile-ui/public_360_01_archivo.png",
-    "tests/mobile-ui/public_360_02_portada.png",
-    "tests/mobile-ui/public_360_03_resultado.png",
-    "tests/mobile-ui/public_360_05_original_recuperado.png",
-    "tests/mobile-ui/public_390_01_archivo.png",
-    "tests/mobile-ui/public_390_02_portada.png",
-    "tests/mobile-ui/public_390_03_resultado.png",
-    "tests/mobile-ui/public_390_04_error_visible.png",
-    "tests/mobile-ui/public_390_05_original_recuperado.png",
-    "tests/mobile-ui/public_430_01_archivo.png",
-    "tests/mobile-ui/public_430_02_portada.png",
-    "tests/mobile-ui/public_430_03_resultado.png",
-    "tests/mobile-ui/public_430_05_original_recuperado.png"
+    "tests/mobile-ui/local_1440_desktop_regression.png",
+    "tests/mobile-ui/local_360_01_archivo.png",
+    "tests/mobile-ui/local_360_02_portada.png",
+    "tests/mobile-ui/local_360_03_resultado.png",
+    "tests/mobile-ui/local_360_05_original_recuperado.png",
+    "tests/mobile-ui/local_390_01_archivo.png",
+    "tests/mobile-ui/local_390_02_portada.png",
+    "tests/mobile-ui/local_390_03_resultado.png",
+    "tests/mobile-ui/local_390_04_error_visible.png",
+    "tests/mobile-ui/local_390_05_original_recuperado.png",
+    "tests/mobile-ui/local_430_01_archivo.png",
+    "tests/mobile-ui/local_430_02_portada.png",
+    "tests/mobile-ui/local_430_03_resultado.png",
+    "tests/mobile-ui/local_430_05_original_recuperado.png"
   ]
 }

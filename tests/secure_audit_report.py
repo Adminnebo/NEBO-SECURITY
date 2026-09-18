@@ -5,6 +5,8 @@ from pathlib import Path
 root=Path(__file__).resolve().parents[1]
 core=json.loads((root/'SECURITY_TEST_REPORT.json').read_text('utf-8'))
 ui=json.loads((root/'SECURITY_TEST_REPORT_UI.json').read_text('utf-8'))
+headers_path=root/'SECURITY_TEST_HEADERS.json'
+headers=json.loads(headers_path.read_text('utf-8')) if headers_path.exists() else {}
 lines=[
     '# ASTRA-SECURE-V2 — independent implementation review and executed tests',
     '', 'This is a focused code review and executed test suite by a separate implementation agent. It is not an external certification or a proof that the complete application has no vulnerabilities.',
@@ -39,6 +41,10 @@ lines += [
     '', '## Runtime response headers', '',
     'These are the actual response security headers observed by the browser, not merely entries requested in a local configuration file:',
     '', '```json', json.dumps(core.get('response_security_headers',{}),indent=2), '```',
+    '', 'The public hosting response did not contain the requested security headers; its static runtime did not apply public/_headers. Do not treat that configuration file as proof of deployed HTTP-header protection.',
+    '', 'The document-level meta CSP was separately tested in a fresh browser. An intentionally inserted inline script was blocked, and a script-src-elem policy violation was observed. The JSON evidence is SECURITY_TEST_HEADERS.json. Meta CSP does not supply HTTP-only protections such as frame-ancestors, HSTS, or Permissions-Policy.',
+    '', 'The public interface run recorded four blocked-inline-script CSP console messages while all eleven functional flows passed. These are retained in SECURITY_TEST_REPORT_UI.json; this report does not claim a console with zero messages or attribute the blocked attempts to an unverified source.',
+    '', 'CSP probe result: ' + json.dumps(headers.get('probe',{})),
     '', '## Reproduce',
     '', 'Tested with Python 3.12 and Microsoft Edge at C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe. Install the pinned test dependencies, then run against a running static site:',
     '', '```powershell', 'python -m pip install -r tests/secure_audit_requirements.txt',

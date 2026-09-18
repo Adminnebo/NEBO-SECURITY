@@ -1,8 +1,8 @@
 {
   "status": "PASS",
   "browser": "Microsoft Edge / Playwright",
-  "base_url": "http://127.0.0.1:8770",
-  "seconds": 24.438,
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "seconds": 26.938,
   "checks": [
     {
       "test": "Python→offline browser: png_alpha",
@@ -128,6 +128,9 @@
     }
   ],
   "network_blocked_after_page_and_worker_load": true,
+  "browser_context_offline_mode": true,
+  "anonymous_fresh_contexts_without_saved_cookies_or_storage": true,
+  "credentials_or_account_session_supplied": false,
   "post_cutoff_network_attempts": [],
   "actual_recipient_ui_tested": true,
   "recipient_ui_post_cutoff_network_attempts": [],

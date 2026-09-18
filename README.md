@@ -1,5 +1,7 @@
 # ASTRA Web — imágenes privadas y recuperación exacta
 
+Repositorio: https://github.com/Adminnebo/NEBO-SECURITY
+
 Web: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
 
 Receptor: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir
@@ -97,6 +99,8 @@ Las instrucciones para repetir las pruebas están en `SECURITY_TEST_REPORT.md`.
 ## Ejecutar localmente
 
 ```powershell
+git clone https://github.com/Adminnebo/NEBO-SECURITY.git
+cd NEBO-SECURITY
 python -m http.server 8770 --bind 127.0.0.1 --directory public
 ```
 
@@ -104,3 +108,25 @@ Abrir http://localhost:8770. La dirección pública funciona sin ese servidor
 ni la computadora del emisor. `package_site.py` prepara únicamente los activos
 estáticos del commit para publicar. Las credenciales temporales de publicación
 no se guardan en el repositorio.
+
+La aplicación no necesita una API, una clave de OpenAI ni instalar paquetes
+de JavaScript para funcionar. Sirve la carpeta `public` mediante localhost
+o un alojamiento HTTPS; abrir el HTML directamente como archivo no basta
+para todas las funciones del navegador.
+
+## Repetir las comprobaciones
+
+Los casos sintéticos de `tests/fixtures` están incluidos en este repositorio.
+Con el servidor local anterior activo, las pruebas de cifrado y de interfaz
+se pueden repetir en otra terminal:
+
+```powershell
+python -m pip install -r tests/secure_audit_requirements.txt
+python tests/secure_audit_core.py --base-url http://127.0.0.1:8770
+python tests/secure_audit_ui.py --base-url http://127.0.0.1:8770
+python tests/mobile_ux_test.py --base-url http://127.0.0.1:8770 --label local
+```
+
+Los scripts usan Microsoft Edge en Windows. `MOBILE_RELEASE.md` explica el
+resultado de la interfaz móvil y el aviso CSP observado en el alojamiento
+público. Los informes conservan los resultados reales, incluidos los avisos.

@@ -1,2 +1,3 @@
 # Preserve exact static asset bytes, including PDFs, across Windows and hosting.
 * -text
+*.bin binary

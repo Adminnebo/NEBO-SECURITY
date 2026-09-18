@@ -1,7 +1,7 @@
 {
   "status": "PASS",
-  "base_url": "http://127.0.0.1:8770",
-  "seconds": 23.437,
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "seconds": 20.812,
   "checks": [
     {
       "test": "NIST AES-256-GCM and RFC5869 HKDF vectors in Python and native WebCrypto",
@@ -125,6 +125,7 @@
   ],
   "browser": "Microsoft Edge",
   "oracle": "Python cryptography AESGCM/HKDF/ECDH; NumPy/Pillow LSB extraction",
+  "response_security_headers": {},
   "cryptographic_reference_sources": [
     "https://www.rfc-editor.org/rfc/rfc5869",
     "https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/AES_GCM.pdf",
