@@ -223,6 +223,7 @@ def audit_recipient_ui(browser, args, manifest, results):
         blocked.append(route.request.url)
         route.abort("internetdisconnected")
     context.route("**/*", no_network)
+    context.set_offline(True)
     page.locator("#receiverTab").click()
     for record in manifest:
         kind = record["kind"]
@@ -307,6 +308,8 @@ def audit(args, payload, manifest):
             route.abort("internetdisconnected")
         receiver_context.route("**/*", no_network)
         sender_context.route("**/*", no_network)
+        receiver_context.set_offline(True)
+        sender_context.set_offline(True)
 
         for record in manifest:
             kind = record["kind"]
@@ -391,6 +394,7 @@ def audit(args, payload, manifest):
     report = {"status": "PASS", "browser": "Microsoft Edge / Playwright", "base_url": args.base_url,
               "seconds": round(time.monotonic() - started, 3), "checks": results,
               "network_blocked_after_page_and_worker_load": True,
+              "browser_context_offline_mode": True,
               "post_cutoff_network_attempts": blocked,
               "actual_recipient_ui_tested": args.ui,
               "recipient_ui_post_cutoff_network_attempts": ui_blocked,
