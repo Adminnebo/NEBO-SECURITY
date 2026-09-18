@@ -290,7 +290,7 @@ async function pdfPreview(bytes) {
 async function textPreview(file) {
   const text = await file.text(); const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 994;
   const context = canvas.getContext('2d'); context.fillStyle = '#ffffff'; context.fillRect(0, 0, 768, 994);
-  context.fillStyle = '#10293a'; context.fillRect(0, 0, 768, 101); context.fillStyle = 'white'; context.font = 'bold 30px Arial'; context.fillText('ASTRA', 51, 60);
+  context.fillStyle = '#10293a'; context.fillRect(0, 0, 768, 101); context.fillStyle = 'white'; context.font = 'bold 30px Arial'; context.fillText('NEBO AI - SECURITY', 51, 60);
   context.font = '12px Arial'; context.fillStyle = '#bbd3dc'; context.fillText('MENSAJE ORIGINAL', 485, 58);
   context.font = '17px Arial'; context.fillStyle = '#2b424f'; let y = 155;
   for (const paragraph of text.slice(0, 14000).split('\n')) {
@@ -330,12 +330,12 @@ async function encode() {
     }
     if (result.exact_file_recovery !== true) throw new Error('La conversión no confirmó la recuperación exacta del archivo. No se mostrará como verificada.');
     const art = new Blob([result.artwork], { type: 'image/png' }); const token = new Blob([result.token], { type: 'application/json' });
-    const artURL = objectURL(art); const tokenURL = objectURL(token); const base = privateMode ? 'ASTRA-envio-privado' : downloadName(file.name);
+    const artURL = objectURL(art); const tokenURL = objectURL(token); const base = privateMode ? 'NEBO-SECURITY-envio-privado' : downloadName(file.name);
     $('artworkImage').src = artURL; $('artworkView').href = artURL;
-    $('downloadArt').href = artURL; $('downloadArt').download = `${base}-ASTRA-obra.png`;
-    $('downloadToken').href = tokenURL; $('downloadToken').download = `${base}-ASTRA-token.json`;
+    $('downloadArt').href = artURL; $('downloadArt').download = `${base}-NEBO-obra.png`;
+    $('downloadToken').href = tokenURL; $('downloadToken').download = `${base}-NEBO-token.json`;
     // Share only the transport files. The recovery secret never enters this list.
-    state.shareFiles = [new File([art], `${base}-ASTRA-obra.png`, { type: 'image/png' }), new File([token], `${base}-ASTRA-token.txt`, { type: 'text/plain' })];
+    state.shareFiles = [new File([art], `${base}-NEBO-obra.png`, { type: 'image/png' }), new File([token], `${base}-NEBO-token.txt`, { type: 'text/plain' })];
     let canShare = false; try { canShare = Boolean(navigator.share && navigator.canShare?.({ files: state.shareFiles })); } catch (_) {}
     sharePackageButton.classList.toggle('hidden', !canShare);
     $('artworkCaption').textContent = privateMode ? 'Imagen portadora con datos cifrados; utiliza colores de referencia. No es una permutación del documento.' : 'Permutación clásica de la representación del archivo. Conserva sus píxeles y su paleta; no cifra el contenido.';
@@ -345,7 +345,7 @@ async function encode() {
     if (state.secretURL) { URL.revokeObjectURL(state.secretURL); state.secretURL = null; }
     if (privateMode && result.recovery_secret) {
       $('recoverySecret').value = result.recovery_secret; $('recoverySecret').type = 'password'; $('showSecret').textContent = 'Mostrar'; $('showSecret').setAttribute('aria-pressed', 'false');
-      state.secretURL = objectURL(new Blob([result.recovery_secret + '\n'], { type: 'text/plain' })); $('downloadSecret').href = state.secretURL; $('downloadSecret').download = 'ASTRA-clave-secreta.key.txt'; $('secretResult').classList.remove('hidden');
+      state.secretURL = objectURL(new Blob([result.recovery_secret + '\n'], { type: 'text/plain' })); $('downloadSecret').href = state.secretURL; $('downloadSecret').download = 'NEBO-SECURITY-clave-secreta.key.txt'; $('secretResult').classList.remove('hidden');
     } else if (privateMode) {
       $('recipientResult').replaceChildren(el('strong', '', 'Protegido para la identidad destinataria'), el('code', 'fingerprint', await fingerprintPublicBundle(state.recipient))); $('recipientResult').classList.remove('hidden');
     }
@@ -468,7 +468,7 @@ setupDrop($('sourceDrop'), selectFile); setupDrop($('artDrop'), file => setRecei
 $('encodeButton').addEventListener('click', encode); $('decodeButton').addEventListener('click', decode); document.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', cancelTask));
 $('recordButton').addEventListener('click', startRecording); $('stopRecord').addEventListener('click', () => stopRecording(false)); $('cancelRecord').addEventListener('click', () => stopRecording(true));
 $('textButton').addEventListener('click', () => { $('textEditor').classList.toggle('hidden'); if (!$('textEditor').classList.contains('hidden')) $('textInput').focus(); });
-$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-astra.txt', { type: 'text/plain' })); });
+$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de seleccionarlo.'); return; } selectFile(new File([text], 'mensaje-nebo.txt', { type: 'text/plain' })); });
 $('demoButton').addEventListener('click', async () => { if (state.busy) return; $('demoButton').disabled = true; errorFor('sender'); try { const response = await fetch(new URL('./assets/documento-ejemplo.pdf', location.href)); if (!response.ok) throw new Error('No se pudo cargar el documento de ejemplo. Puedes seleccionar tu propio archivo.'); const file = new File([await response.blob()], 'documento-ejemplo.pdf', { type: 'application/pdf' }); if (selectFile(file)) { if (mobileScreen.matches) setMobileStep(1); else await encode(); } } catch (error) { errorFor('sender', error.message); } finally { updateButtons(); } });
 document.querySelectorAll('.copy-receiver').forEach(button => button.addEventListener('click', copyReceiverLink));
 document.querySelectorAll('.cover-choice').forEach(button => button.addEventListener('click', () => chooseCover(button.dataset.cover)));
@@ -491,13 +491,13 @@ $('copySecret').addEventListener('click', copySecret);
 sharePackageButton.addEventListener('click', async () => {
   if (!state.shareFiles || state.busy) return;
   sharePackageButton.disabled = true;
-  try { await navigator.share({ files: state.shareFiles, title: 'Envío ASTRA' }); toast('Recuerda compartir la clave secreta por otro canal.'); }
+  try { await navigator.share({ files: state.shareFiles, title: 'Envío NEBO AI - SECURITY' }); toast('Recuerda compartir la clave secreta por otro canal.'); }
   catch (error) { if (error.name !== 'AbortError') toast('Este dispositivo no pudo compartir los archivos. Usa los botones de descarga.'); }
   finally { sharePackageButton.disabled = false; }
 });
-$('receivedSecretFile').addEventListener('change', async () => { const file = $('receivedSecretFile').files[0]; if (!file) return; if (file.size > 2048) { errorFor('receiver', 'Este archivo no parece una clave secreta ASTRA. Selecciona el archivo .key.txt que recibiste.'); return; } const secret = (await file.text()).trim(); if (!/^[A-Za-z0-9_-]{43}$/.test(secret)) { errorFor('receiver', 'La clave debe contener los 43 caracteres de la clave secreta ASTRA.'); return; } $('receivedSecret').value = secret; errorFor('receiver'); toast('Clave secreta cargada en este navegador.'); });
+$('receivedSecretFile').addEventListener('change', async () => { const file = $('receivedSecretFile').files[0]; if (!file) return; if (file.size > 2048) { errorFor('receiver', 'Este archivo no parece una clave secreta NEBO. Selecciona el archivo .key.txt que recibiste.'); return; } const secret = (await file.text()).trim(); if (!/^[A-Za-z0-9_-]{43}$/.test(secret)) { errorFor('receiver', 'La clave debe contener los 43 caracteres de la clave secreta NEBO.'); return; } $('receivedSecret').value = secret; errorFor('receiver'); toast('Clave secreta cargada en este navegador.'); });
 $('createIdentity').addEventListener('click', async () => { $('createIdentity').disabled = true; try { state.identity = await createIdentity(); await refreshIdentity(); toast('Identidad creada. Descarga su archivo público para compartirlo.'); } catch (error) { $('identityStatus').textContent = error.message; } finally { updateButtons(); } });
-$('exportIdentity').addEventListener('click', async () => { try { const json = await exportPublicIdentity(state.identity); const link = el('a'); link.href = objectURL(new Blob([json], { type: 'application/json' })); link.download = 'ASTRA-identidad-publica.json'; document.body.append(link); link.click(); link.remove(); } catch (error) { $('identityStatus').textContent = error.message; } });
+$('exportIdentity').addEventListener('click', async () => { try { const json = await exportPublicIdentity(state.identity); const link = el('a'); link.href = objectURL(new Blob([json], { type: 'application/json' })); link.download = 'NEBO-SECURITY-identidad-publica.json'; document.body.append(link); link.click(); link.remove(); } catch (error) { $('identityStatus').textContent = error.message; } });
 $('clearIdentity').addEventListener('click', async () => { if (!window.confirm('Si eliminas esta identidad, no podrás abrir los envíos dirigidos a ella. ¿Eliminar identidad de este navegador?')) return; try { await clearIdentity(); await refreshIdentity(); toast('Identidad local eliminada.'); } catch (error) { $('identityStatus').textContent = error.message; } });
 document.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault(); }); document.addEventListener('drop', event => event.preventDefault());
 window.addEventListener('beforeunload', () => { state.recording?.stream.getTracks().forEach(track => track.stop()); });

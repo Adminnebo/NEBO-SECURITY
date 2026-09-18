@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-18",
+  "application": "NEBO AI - SECURITY",
+  "environment": "Local Edge browser via Playwright, http://127.0.0.1:8774",
+  "status": "PASS",
+  "theme_checks": {
+    "system_dark_default": true,
+    "toggle_both_directions": true,
+    "reload_persistence": true,
+    "cross_tab_sync": true,
+    "storage_disabled_fallback": true,
+    "selected_file_preserved_after_toggle": true
+  },
+  "functional_check": {
+    "sender_width": 390,
+    "receiver_width": 320,
+    "mode": "dark",
+    "input": "nebo-demo.txt",
+    "download_branding": "NEBO",
+    "fresh_receiver_loaded_then_offline": true,
+    "recovered_bytes_equal_input": true,
+    "page_errors": [],
+    "horizontal_overflow": false
+  },
+  "visual_check": {
+    "viewport_widths": [320, 390, 1440],
+    "horizontal_overflow": false,
+    "toggle_minimum_target_px": 44,
+    "views": ["entry", "cover", "receive", "real_result", "invalid_token_error"],
+    "artwork_colors_unchanged": true,
+    "screenshots_directory": "ui-mobile-theme"
+  },
+  "scope": "Theme, visible branding and download filenames. Protocol identifiers and cryptographic operations are unchanged."
+}

@@ -165,7 +165,7 @@ def run(args):
                 screenshot(page, args.label, width, "01_archivo")
                 if width == 390:
                     text = "Mensaje móvil ASTRA: café, montaña y mar.\nSegunda línea; texto UTF-8 exacto."
-                    source = text.encode("utf-8"); name = "mensaje-astra.txt"
+                    source = text.encode("utf-8"); name = "mensaje-nebo.txt"
                     page.locator("#textButton").click(); page.locator("#textInput").fill(text); page.locator("#useText").click()
                     assert page.locator("#textInput").input_value() == text
                     flow = "typed_text"

@@ -11,6 +11,8 @@
   Cache-Control: no-cache
 /styles.css
   Cache-Control: no-cache
+/theme.js
+  Cache-Control: no-cache
 
 /secure-worker.js
   Cache-Control: no-cache

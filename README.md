@@ -1,4 +1,8 @@
-# ASTRA Web — imágenes privadas y recuperación exacta
+# NEBO AI - SECURITY
+
+Interfaz móvil con temas claro y oscuro. El botón de sol/luna de la cabecera
+cambia el tema y recuerda la selección en este navegador. La primera visita
+usa la preferencia de color del dispositivo.
 
 Repositorio: https://github.com/Adminnebo/NEBO-SECURITY
 
