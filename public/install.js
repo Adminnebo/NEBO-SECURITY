@@ -70,7 +70,7 @@ async function initialize() {
     return null;
   }
   try {
-    return await navigator.serviceWorker.register(new URL('./sw.js?v=10', import.meta.url), { scope: './', updateViaCache: 'none' });
+    return await navigator.serviceWorker.register(new URL('./sw.js?v=11', import.meta.url), { scope: './', updateViaCache: 'none' });
   } catch {
     say('No se pudo preparar la instalación. Comprueba la conexión y vuelve a cargar NEBO.');
     return null;

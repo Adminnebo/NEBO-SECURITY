@@ -1,5 +1,8 @@
 # Aplicación privada e instalación móvil
 
+> Documento histórico de la versión 10 con login de ChatGPT. La versión 11
+> usa cuentas NEBO: consulta [NATIVE_AUTH.md](NATIVE_AUTH.md).
+
 La versión 10 usa el control de acceso del alojamiento Sites. El proyecto
 existente pasó a audiencia `custom`, revisión 3, con el propietario como único
 usuario autorizado. Las futuras invitaciones requieren elegir expresamente

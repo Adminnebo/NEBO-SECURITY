@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#f6f5f2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Entrar · NEBO AI - SECURITY</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/nebo-symbol.svg">
+  <link rel="stylesheet" href="/auth.css?v=11">
+  <script src="/theme.js?v=11"></script>
+  <script type="module" src="/login.js?v=11"></script>
+</head>
+<body class="login-page">
+  <header class="auth-header">
+    <a class="auth-brand" href="/login" aria-label="NEBO AI - SECURITY"><span class="logo-crop" aria-hidden="true"><img src="/assets/nebo-logo-original.png" width="1834" height="1800" alt=""></span><span class="brand-caption">SECURITY</span></a>
+    <button id="themeToggle" class="theme-button" type="button" aria-label="Cambiar a modo oscuro" aria-pressed="false"><span aria-hidden="true">◐</span><span id="themeToggleLabel">Oscuro</span></button>
+  </header>
+  <main class="login-layout">
+    <section class="login-art" aria-labelledby="welcomeTitle">
+      <img class="landscape" src="/assets/mountain.png" alt="Montañas bajo un cielo de atardecer">
+      <div class="art-content"><span class="eyebrow">TU ESPACIO PRIVADO</span><h1 id="welcomeTitle">Lo que compartes,<br>se queda entre ustedes.</h1><p>Mensajes, fotos y archivos.<br>Un solo envío protegido.</p><span class="art-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg> NEBO AI - SECURITY</span></div>
+    </section>
+    <section class="login-card" aria-labelledby="loginTitle">
+      <div class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></div>
+      <span class="eyebrow">ACCESO POR INVITACIÓN</span>
+      <h2 id="loginTitle">Bienvenido a NEBO.</h2>
+      <p class="lead">Entra con el usuario y la contraseña que te compartió el administrador.</p>
+      <form id="loginForm">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" pattern="[a-z0-9._\-]{3,40}" placeholder="Tu usuario" required>
+        <label for="password">Contraseña</label>
+        <div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required><button class="show-password" type="button" data-password="password" aria-controls="password" aria-pressed="false">Mostrar</button></div>
+        <p id="loginStatus" class="status" role="status" aria-live="polite"></p>
+        <button id="loginSubmit" class="button primary full" type="submit">Entrar a mi espacio <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="auth-footnote">¿Necesitas acceso o una nueva contraseña?<br>Contacta a quien te invitó.</p>
+    </section>
+  </main>
+  <footer class="auth-footer">NEBO AI - SECURITY <span>Un espacio para compartir con confianza.</span></footer>
+  <noscript><p class="noscript">Activa JavaScript en tu navegador para iniciar sesión.</p></noscript>
+</body>
+</html>

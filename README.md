@@ -1,15 +1,17 @@
 # NEBO AI - SECURITY
 
-**Versión privada 10.** El sitio exige iniciar sesión mediante el alojamiento
-con una cuenta de ChatGPT autorizada. El acceso está configurado por invitación;
-inicialmente solo entra el propietario. No existe registro público. La rama
-`version-10-acceso-privado` conserva esta modalidad por separado de
-`version-9-png-token-integrado` y `version-7-anterior`.
+**Versión 11: usuarios y contraseñas de NEBO.** El administrador crea una cuenta
+para cada persona desde **Mi cuenta → Personas con acceso → Crear usuario**.
+El botón **Copiar enlace, usuario y contraseña** prepara los datos para compartir.
+La otra persona entra con esas credenciales; no necesita una cuenta de ChatGPT.
+No existe registro público. La rama `version-11-usuarios-nebo` conserva esta
+modalidad por separado de `version-10-acceso-privado` y las versiones anteriores.
 
-El control real se aplica en el servidor antes de entregar HTML, JavaScript y
-otros recursos. El formulario de acceso pertenece al alojamiento, no es una
-contraseña simulada dentro del JavaScript de NEBO. Para permitir otra persona,
-el propietario debe incorporarla expresamente a la lista de acceso de Sites.
+La pantalla de login es pública. Un Worker comprueba la sesión en el servidor
+antes de entregar la aplicación y sus recursos privados. Una base de datos D1
+conserva las cuentas y sesiones entre publicaciones. La contraseña de la cuenta
+abre la app; **no sustituye la clave secreta de un envío** ni permite recuperar
+mensajes sin ella. [Diseño y límites del acceso](public/spec/NATIVE_AUTH.md).
 
 La app necesita conexión para comprobar la autorización al entrar y antes de
 crear o abrir un envío. Una sesión que deja de verificarse se cierra y descarta
@@ -30,9 +32,10 @@ Web: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
 
 Receptor: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir
 
-Aplicación estática en español. El navegador cifra y recupera el archivo; no
-hay API que reciba originales o secretos ni base de datos de mensajes. Las
-funciones criptográficas proceden de Web Crypto.
+Aplicación web en español con autenticación de servidor. El navegador cifra y
+recupera los archivos; las API de cuenta reciben credenciales y datos de acceso,
+pero no reciben los originales, el contenido de los mensajes ni sus claves de
+cifrado. No hay una base de datos de mensajes. El cifrado del envío usa Web Crypto.
 
 ## Primera prueba privada
 
@@ -57,7 +60,7 @@ y guardar una copia opcional del token por separado.
 4. Guarda la clave secreta generada. No está dentro del PNG ni del token.
    Compártela por un canal separado y protegido. Si la pierdes, no existe una
    clave maestra del servidor que permita recuperar el archivo.
-5. Autoriza primero la cuenta del receptor en el acceso del alojamiento.
+5. Crea primero el usuario del receptor en **Mi cuenta → Personas con acceso**.
    Envía el PNG junto con el enlace del receptor. En WhatsApp, adjunta el
    PNG como documento/archivo, sin recomprimir.
 6. El receptor selecciona el PNG, ve su portada inmediatamente y aporta la
@@ -143,7 +146,7 @@ La versión privada no guarda la app para reabrirla sin conexión. Cada petició
 llega al servidor; una denegación o un fallo de red nunca devuelve la app desde
 la caché. La actualización elimina solo las cachés antiguas de NEBO y conserva
 IndexedDB, sus identidades y contactos. La instalación depende del navegador.
-[Política privada y migración](public/spec/PRIVATE_ACCESS.md).
+[Acceso actual, sesiones y migración](public/spec/NATIVE_AUTH.md).
 
 Las versiones anteriores ya descargadas o clonadas no pueden revocarse a
 distancia. Su código y las pruebas de recuperación offline permanecen en las
@@ -155,8 +158,10 @@ ramas anteriores; esos informes no describen la política de acceso actual.
 - `public/portable-png.js`: integración y extracción del token cifrado `neBo`.
 - `public/cover-planner.js`: capacidad y dimensiones automáticas sin cambiar adjuntos.
 - `public/contact-store.js`: libreta local de identidades públicas verificadas.
-- `public/access.js`, `public/access-check.json`: comprobación del recurso protegido
-  por el alojamiento, migración de caché y entrada a la app; no reemplazan al servidor.
+- `worker/index.js`, `worker/auth.js`: autorización real, sesiones y administración.
+- `public/access.js`: comprueba `/api/auth/session` antes de abrir la aplicación.
+- `public/login.js`, `public/account.js`: acceso y gestión de cuentas.
+- `public/account-storage.js`: organiza identidades y contactos locales por cuenta.
 - `public/sw.js`, `public/install.js`: transporte sin caché e instalación privada.
 - `public/identity-store.js`: identidad privada local y exportación pública.
 - `public/codec-worker.js`: compatibilidad y permutación clásica.
@@ -175,10 +180,10 @@ Double Ratchet, garantías poscuánticas ni certificación externa. Cifrar para
 el receptor no firma la identidad del remitente. Las pruebas automatizadas no
 sustituyen una auditoría externa para datos de alta sensibilidad.
 
-En la publicación V2 se comprobó que el alojamiento no aplica el archivo
+En la antigua publicación estática V2 se comprobó que el alojamiento no aplica el archivo
 `public/_headers`: las cabeceras HTTP adicionales solicitadas no aparecieron
 en la respuesta. La CSP de la página se declara mediante una etiqueta meta.
-No se atribuye al despliegue protección de cabeceras que no se haya observado.
+La versión 11 establece sus cabeceras desde el Worker, incluida CSP y `no-store`.
 
 El ZIP de entrega incluye casos de prueba sintéticos y los informes reales de
 la web pública. No incluye claves privadas ni secretos de mensajes del usuario.
@@ -186,52 +191,39 @@ Las instrucciones para repetir las pruebas están en `SECURITY_TEST_REPORT.md`.
 
 ## Ejecutar localmente
 
-```powershell
-git clone https://github.com/Adminnebo/NEBO-SECURITY.git
-cd NEBO-SECURITY
-python -m http.server 8770 --bind 127.0.0.1 --directory public
-```
+La versión 11 necesita el Worker y D1; `python -m http.server` no implementa su
+autenticación. Instala las dependencias de desarrollo con `npm ci`, configura
+el secreto local `NEBO_BOOTSTRAP_ADMIN_JSON` en `.dev.vars` y genera los recursos
+con `python package_site_worker.py --dev-assets`. Ejecuta Wrangler con
+`wrangler.local.jsonc`, usando HTTPS para probar las cookies `Secure` y el
+service worker. El [documento de autenticación](public/spec/NATIVE_AUTH.md)
+describe el bootstrap. No incluyas `.dev.vars` ni contraseñas en Git.
 
-Abrir http://localhost:8770. La dirección pública funciona sin ese servidor
-ni la computadora del emisor. `package_site.py` prepara únicamente los activos
-estáticos del commit para publicar. Las credenciales temporales de publicación
-no se guardan en el repositorio.
-
-La aplicación no necesita una API, una clave de OpenAI ni instalar paquetes
-de JavaScript para funcionar. Sirve la carpeta `public` mediante localhost
-o un alojamiento HTTPS; abrir el HTML directamente como archivo no basta
-para todas las funciones del navegador.
+`package_site_worker.py` crea el paquete de publicación a partir del commit,
+con los recursos privados dentro del módulo del Worker. No necesita una clave
+de OpenAI. La web publicada funciona sin la computadora del emisor.
 
 ## Repetir las comprobaciones
 
-Los casos sintéticos de `tests/fixtures` están incluidos en este repositorio.
-Con el servidor local anterior activo, las pruebas de cifrado y de interfaz
-se pueden repetir en otra terminal:
+Los casos sintéticos de `tests/fixtures` están incluidos. La suite del backend
+usa SQLite real y el scrypt de Node; no requiere credenciales del usuario:
 
 ```powershell
-python -m pip install -r tests/secure_audit_requirements.txt
-python tests/secure_audit_core.py --base-url http://127.0.0.1:8770
+python package_site_worker.py --dev-assets
+node tests/native_auth_backend_test.mjs
 node tests/test_cover_planner.mjs
 node tests/test_portable_png.mjs
 python tests/verify_portable_png.py
-python tests/v8_userflow_test.py --base-url http://127.0.0.1:8770
-python tests/multi_message_test.py --base-url http://127.0.0.1:8770
-python tests/recipient_race_test.py --base-url http://127.0.0.1:8770
-python tests/private_sw_test.py
-python tests/private_bootstrap_test.py
-python tests/private_anonymous_test.py
 ```
 
-Los scripts usan Microsoft Edge en Windows. `MOBILE_RELEASE.md` explica el
-resultado de la interfaz móvil y el aviso CSP observado en el alojamiento
-público. Los informes antiguos conservan los resultados de sus versiones;
-`tests/V8_USERFLOW_REPORT.json`, `tests/PWA_CONTACTS_REPORT.json` y
-`tests/PORTABLE_CODEC_REPORT.json` documentan las pruebas de esta actualización.
-Estas pruebas usan navegadores de escritorio y tamaños móviles emulados;
-no equivalen a una prueba en teléfonos físicos o a una auditoría externa.
+`tests/NATIVE_AUTH_BACKEND_REPORT.json` documenta 22 comprobaciones del backend;
+`tests/NATIVE_AUTH_BROWSER_REPORT.json` documenta ocho recorridos sobre el Worker
+y D1 locales con navegador real. Los informes de flujo verifican también el
+PNG portable y su recuperación exacta. Consulta los informes para distinguir
+pruebas locales de pruebas de despliegue. Las pantallas móviles emuladas no
+equivalen a probar teléfonos físicos ni a una auditoría externa.
 
-Los informes `PRIVATE_*` documentan la versión privada. Una prueba local con
-`python -m http.server` no aplica autenticación de servidor: sirve para desarrollo.
-Para alojar esta rama fuera de Sites hay que proteger **todas** sus rutas mediante
-un control de acceso equivalente. Publicar el archivo `access-check.json` por sí
-solo no autentica a nadie. Nunca distribuyas credenciales del alojamiento al cliente.
+Los informes `PRIVATE_*`, V8 y PWA anteriores conservan los resultados de sus
+respectivas versiones. El control de Sites de la versión 10 es histórico;
+la versión 11 autoriza con sus propias sesiones. No publiques `public/` como
+sitio estático para esta versión: omitirías la protección del Worker.

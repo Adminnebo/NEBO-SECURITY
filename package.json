@@ -1,0 +1,13 @@
+{
+  "name": "nebo-security-private-access",
+  "version": "11.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "python package_site_worker.py --dev-assets",
+    "dev": "wrangler dev --config wrangler.local.jsonc --port 8789 --local-protocol https"
+  },
+  "devDependencies": {
+    "wrangler": "4.135.0"
+  }
+}

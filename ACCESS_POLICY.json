@@ -1,12 +1,13 @@
 {
   "project_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c",
-  "provider": "Sites Sign in with ChatGPT",
-  "access_mode": "custom",
-  "owner_only": true,
-  "external_visitors": 0,
-  "allowed_groups": 0,
-  "policy_revision": 3,
-  "public_signup": false,
-  "server_policy_required": true,
-  "note": "Documentation only; the hosting access policy enforces authorization."
+  "application_version": 11,
+  "authentication": "NEBO username/password",
+  "self_registration": false,
+  "account_creation": "administrator_only",
+  "session_cookie": "__Host-nebo_session",
+  "session_hours": 8,
+  "private_assets": "embedded_server_module",
+  "hosting_access_during_validation": "custom_owner_only",
+  "hosting_access_after_native_auth_verification": "public_login_page_with_server_protected_application",
+  "note": "Documentation only. Worker sessions and deployed runtime configuration enforce access."
 }

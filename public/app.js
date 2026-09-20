@@ -5,7 +5,7 @@ import { estimateCiphertextBytes } from './secure-worker.js';
 import { unpackPortablePNG } from './portable-png.js';
 import { planCover } from './cover-planner.js';
 import { listContacts, saveContact, removeContact } from './contact-store.js';
-import { initInstallUI } from './install.js?v=10';
+import { initInstallUI } from './install.js?v=11';
 
 const $ = id => document.getElementById(id);
 const MAX_FILE_BYTES = 20 * 1024 * 1024;

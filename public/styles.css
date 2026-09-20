@@ -790,3 +790,10 @@ html[data-theme="dark"] body[data-access="offline"] .access-status{background:#3
 }
 @media(max-width:480px){.header-inner .theme-toggle{width:44px;min-width:44px;padding:10px}.header-inner #themeToggleLabel{display:none}}
 @media(max-width:359px){.access-gate{padding:20px 14px 28px}.access-card{padding:26px 20px 22px}.access-card h1{font-size:24px}#accessDescription{font-size:12px}.access-status{padding:11px 9px}}
+
+/* NEBO account access remains reachable without crowding mobile controls. */
+.account-link{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px;border:1px solid var(--line);border-radius:12px;color:var(--ink);background:var(--bg)}
+.account-link svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+body:not([data-access="granted"]) .account-link{display:none}
+@media(max-width:767px){.account-link{margin-left:auto}.install-shortcut{margin-left:0}.header-inner{gap:8px}}
+@media(max-width:380px){.header-inner{padding-left:14px;padding-right:14px;gap:6px}.header-inner .brand{max-width:124px}.header-inner .brand-logo{max-width:110px}}

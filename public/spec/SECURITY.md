@@ -1,7 +1,7 @@
 # Seguridad de ASTRA: modo privado V2
 
-La publicación de aplicación 10 añade acceso restringido en el alojamiento.
-Su política actual está en [PRIVATE_ACCESS.md](PRIVATE_ACCESS.md). La PWA ya no
+La aplicación 11 añade cuentas propias de NEBO y sesiones verificadas por el servidor.
+Su política actual está en [NATIVE_AUTH.md](NATIVE_AUTH.md). La PWA ya no
 precarga la aplicación ni permite reabrirla sin conexión. El formato cifrado V2
 y la recuperación exacta de archivos mantienen la compatibilidad anterior.
 

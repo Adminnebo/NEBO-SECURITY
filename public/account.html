@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#f6f5f2">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Mi cuenta · NEBO AI - SECURITY</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/nebo-symbol.svg">
+  <link rel="stylesheet" href="/auth.css?v=11">
+  <script src="/theme.js?v=11"></script>
+  <script type="module" src="/account.js?v=11"></script>
+</head>
+<body class="account-page">
+  <header class="auth-header"><a class="auth-brand" href="/" aria-label="NEBO AI - SECURITY inicio"><span class="logo-crop" aria-hidden="true"><img src="/assets/nebo-logo-original.png" width="1834" height="1800" alt=""></span><span class="brand-caption">SECURITY</span></a><button id="themeToggle" class="theme-button" type="button" aria-label="Cambiar a modo oscuro" aria-pressed="false"><span aria-hidden="true">◐</span><span id="themeToggleLabel">Oscuro</span></button></header>
+  <main class="account-main">
+    <a class="back-link" href="/">← Volver a mis envíos</a>
+    <div class="account-intro"><div><span class="eyebrow">TU ESPACIO NEBO</span><h1>Mi cuenta</h1><p>Controla tu acceso y las personas que invitas.</p></div><button id="logoutButton" class="button secondary" type="button" disabled>Cerrar sesión</button></div>
+    <p id="accountStatus" class="status" role="status" aria-live="polite">Comprobando tu sesión…</p>
+    <div id="accountContent" hidden>
+      <section class="account-card identity-card" aria-labelledby="profileTitle"><div class="avatar" id="accountAvatar" aria-hidden="true">N</div><div><h2 id="profileTitle">Tu perfil</h2><p id="accountName"></p><span id="accountUsername" class="muted"></span></div><span id="accountRole" class="pill"></span></section>
+      <section id="adminSection" class="account-card" hidden aria-labelledby="usersTitle">
+        <div class="section-heading"><div><span class="eyebrow">SOLO ADMINISTRADOR</span><h2 id="usersTitle">Personas con acceso</h2><p>Crea un usuario y comparte sus datos. Así de sencillo.</p></div><span class="pill" id="userCount">0 usuarios</span></div>
+        <form id="createUserForm" class="create-form">
+          <div class="form-grid"><div><label for="newDisplayName">Nombre</label><input id="newDisplayName" name="displayName" type="text" maxlength="80" autocomplete="off" placeholder="Nombre de la persona" required></div><div><label for="newUsername">Usuario</label><input id="newUsername" name="username" type="text" minlength="3" maxlength="40" pattern="[a-z0-9._\-]{3,40}" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="p. ej. maria.perez" required aria-describedby="usernameHint"><small id="usernameHint">3–40 caracteres: letras minúsculas, números, punto, guion o guion bajo.</small></div></div>
+          <label for="newUserPassword">Contraseña inicial</label><div class="password-field"><input id="newUserPassword" name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required aria-describedby="passwordHint"><button class="show-password" type="button" data-password="newUserPassword" aria-controls="newUserPassword" aria-pressed="false">Mostrar</button></div><div class="field-actions"><small id="passwordHint">Al menos 12 caracteres.</small><button class="text-button" id="generatePassword" type="button">Generar contraseña</button></div>
+          <p id="createUserStatus" class="status" role="status" aria-live="polite"></p><button class="button primary" type="submit">Crear usuario <span aria-hidden="true">＋</span></button>
+        </form>
+        <section id="credentialsResult" class="credentials-result" hidden aria-labelledby="credentialsTitle"><div class="section-heading"><h3 id="credentialsTitle">Acceso listo para compartir</h3><button id="clearCredentials" class="text-button" type="button">Ocultar datos</button></div><p>Estos datos se muestran ahora. La persona podrá cambiar su contraseña al entrar.</p><label for="credentialUsername">Usuario</label><input id="credentialUsername" readonly autocomplete="off"><label for="credentialPassword">Contraseña</label><div class="password-field"><input id="credentialPassword" type="password" readonly autocomplete="off"><button class="show-password" type="button" data-password="credentialPassword" aria-controls="credentialPassword" aria-pressed="false">Mostrar</button></div><button id="copyCredentials" class="button secondary" type="button">Copiar enlace, usuario y contraseña</button><p id="copyStatus" class="status" role="status" aria-live="polite"></p></section>
+        <div class="list-heading"><h3>Usuarios creados</h3><button id="refreshUsers" class="text-button" type="button">Actualizar</button></div><p id="usersStatus" class="status" role="status" aria-live="polite"></p><ul id="usersList" class="users-list" aria-label="Personas con acceso"></ul>
+      </section>
+      <section class="account-card" aria-labelledby="passwordTitle"><div class="section-heading"><div><h2 id="passwordTitle">Cambiar mi contraseña</h2><p>Al guardarla, se cerrarán tus sesiones en todos los dispositivos.</p></div></div><form id="changePasswordForm" class="change-password-form"><label for="currentPassword">Contraseña actual</label><div class="password-field"><input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" maxlength="128" required><button class="show-password" type="button" data-password="currentPassword" aria-controls="currentPassword" aria-pressed="false">Mostrar</button></div><label for="newPassword">Nueva contraseña</label><div class="password-field"><input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required aria-describedby="newPasswordHint"><button class="show-password" type="button" data-password="newPassword" aria-controls="newPassword" aria-pressed="false">Mostrar</button></div><small id="newPasswordHint">Al menos 12 caracteres. La contraseña de tu cuenta es distinta de la clave de un envío.</small><label for="confirmPassword">Repite la nueva contraseña</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><p id="passwordStatus" class="status" role="status" aria-live="polite"></p><button class="button primary" type="submit">Guardar nueva contraseña</button></form></section>
+    </div>
+  </main>
+  <dialog id="resetDialog" aria-labelledby="resetTitle" aria-describedby="resetDescription"><form id="resetPasswordForm"><div class="section-heading"><h2 id="resetTitle">Nueva contraseña</h2><button id="closeReset" class="text-button" type="button">Cancelar</button></div><p id="resetDescription"></p><label for="resetPassword">Nueva contraseña</label><div class="password-field"><input id="resetPassword" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><button class="show-password" type="button" data-password="resetPassword" aria-controls="resetPassword" aria-pressed="false">Mostrar</button></div><div class="field-actions"><small>Al menos 12 caracteres.</small><button id="generateResetPassword" class="text-button" type="button">Generar contraseña</button></div><p id="resetStatus" class="status" role="status" aria-live="polite"></p><button class="button primary full" type="submit">Cambiar y cerrar sus sesiones</button></form></dialog>
+  <footer class="auth-footer">NEBO AI - SECURITY <span>Acceso solo para personas autorizadas.</span></footer>
+  <noscript><p class="noscript">Activa JavaScript para administrar tu cuenta.</p></noscript>
+</body>
+</html>

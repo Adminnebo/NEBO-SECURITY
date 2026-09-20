@@ -1,10 +1,11 @@
-/* The hosting access policy is the authentication boundary. This bootstrap
- * rechecks that protected origin and never treats a local flag as a session. */
+/* Server-side NEBO sessions authorize every protected resource. This bootstrap
+ * rechecks the session and never treats a local flag as authorization. */
 const $ = id => document.getElementById(id);
 const ROOT = new URL('./', import.meta.url);
-const PRIVATE_WORKER = new URL('./sw.js?v=10', import.meta.url).href;
+const PRIVATE_WORKER = new URL('./sw.js?v=11', import.meta.url).href;
 const OWNED_CACHE = /^nebo-app-v\d+$/;
 let loaded = false, inFlight = null, lastCheck = 0, workerPrepared = false;
+let sessionUser = null;
 
 function gate(state, title, description) {
   document.body.dataset.access = state;
@@ -18,7 +19,7 @@ function gate(state, title, description) {
 }
 
 async function probe() {
-  const url = new URL('access-check.json', ROOT);
+  const url = new URL('api/auth/session', ROOT);
   url.searchParams.set('check', crypto.randomUUID());
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
@@ -26,7 +27,12 @@ async function probe() {
     const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', redirect: 'error', headers: { Accept: 'application/json' }, signal: controller.signal });
     if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return false;
     const data = await response.json();
-    return data?.format === 'NEBO-HOST-ACCESS-V1' && data.version === 10;
+    if (data?.authenticated !== true || data.format !== 'NEBO-SESSION-V1' || !data.user?.id) return false;
+    // A cookie can change in another tab. Reload before using a different
+    // account so in-memory receiver keys never carry into its work session.
+    if (loaded && sessionUser?.id !== data.user.id) return false;
+    sessionUser = Object.freeze({id: data.user.id, role: data.user.role});
+    return true;
   } finally { clearTimeout(timer); }
 }
 
@@ -68,13 +74,13 @@ async function checkAccess() {
     try { allowed = await probe(); } catch (_) {}
     if (!allowed) {
       const offline = !navigator.onLine;
-      gate(offline ? 'offline' : 'denied', offline ? 'Conéctate para entrar' : 'Comprueba tu sesión', offline ? 'Esta versión verifica tu autorización por internet antes de abrir la aplicación.' : 'Abre el inicio de sesión del alojamiento con una cuenta autorizada. Si no tienes acceso, solicítalo al propietario.');
+      gate(offline ? 'offline' : 'denied', offline ? 'Conéctate para entrar' : 'Inicia sesión en NEBO', offline ? 'Esta versión verifica tu autorización por internet antes de abrir la aplicación.' : 'Entra con el usuario y la contraseña que te entregó el administrador.');
       if (loaded) window.dispatchEvent(new Event('nebo:access-locked'));
       return false;
     }
     try {
       await preparePrivateWorker();
-      if (!loaded) { await import('./app.js?v=10'); loaded = true; }
+      if (!loaded) { await import('./app.js?v=11'); loaded = true; }
       lastCheck = Date.now();
       gate('granted', 'Acceso autorizado', 'Tu contenido se procesa en este dispositivo.');
       return true;
@@ -88,10 +94,10 @@ async function checkAccess() {
 
 // Every encode/decode rechecks the protected origin. This object contains no
 // credentials, tokens, user details, or server authorization decisions to cache.
-window.NEBO_ACCESS = Object.freeze({ require: () => checkAccess() });
+window.NEBO_ACCESS = Object.freeze({ require: () => checkAccess(), get user() { return sessionUser; } });
 $('accessRetry').addEventListener('click', () => {
   if (!navigator.onLine || document.body.dataset.access === 'offline') checkAccess();
-  else location.reload();
+  else location.replace('/login?next=' + encodeURIComponent(location.search.includes('modo=recibir') ? '/?modo=recibir' : '/'));
 });
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && loaded && Date.now() - lastCheck > 15000) checkAccess();

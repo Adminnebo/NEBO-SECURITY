@@ -1,5 +1,6 @@
 /* Public recipient address book only. Never stores secrets or private CryptoKeys. */
 import { validatePublicBundle } from './secure-worker.js';
+import { accountDatabaseName } from './account-storage.js';
 
 const DB_NAME = 'nebo-public-contacts-v1';
 const STORE = 'contacts';
@@ -17,7 +18,7 @@ function alias(value) {
 function openDB() {
   if (!globalThis.indexedDB) return Promise.reject(new Error('Este navegador no permite guardar contactos locales.'));
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(accountDatabaseName(DB_NAME), 1);
     let rejected = false;
     request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: 'id' });
     request.onerror = () => { rejected = true; reject(new Error('No se pudo abrir la libreta de contactos de este navegador.')); };

@@ -13,8 +13,20 @@ ROOT = Path(__file__).resolve().parents[1]
 def run(base, report):
     # Optional owner-only hosting test credential; never written to reports or disk.
     owner_token = os.environ.pop('NEBO_SITES_AUDIT_TOKEN', '')
+    native_user = os.environ.pop('NEBO_TEST_LOGIN_USER', '')
+    native_password = os.environ.pop('NEBO_TEST_LOGIN_PASSWORD', '')
     headers = {'OAI-Sites-Authorization': 'Bearer ' + owner_token} if owner_token else {}
     report['access_check'] = 'owner_testing_header' if owner_token else 'normal_browser'
+    if native_user and native_password:
+        report['access_check'] = 'nebo_username_password'
+    def sign_in(ctx):
+        if not native_user or not native_password: return
+        parsed = urlsplit(base)
+        origin = parsed.scheme + '://' + parsed.netloc
+        response = ctx.request.post(base + '/api/auth/login',
+                                    headers={'Origin':origin},
+                                    data={'username':native_user,'password':native_password})
+        assert response.status == 200, 'NEBO test-account login did not succeed'
     def protect_test_credential(ctx):
         if not owner_token: return
         allowed_origin = urlsplit(base).netloc
@@ -32,9 +44,12 @@ def run(base, report):
         report['checks'].append({'test': name, 'passed': True, **details})
         print('PASS ' + name, flush=True)
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(executable_path=EDGE, headless=True)
-        context = browser.new_context(viewport={'width': 390, 'height': 844}, accept_downloads=True, service_workers='allow', extra_http_headers=headers)
+        local = urlsplit(base).hostname in ('localhost','127.0.0.1')
+        browser = pw.chromium.launch(executable_path=EDGE, headless=True,
+                                     args=['--ignore-certificate-errors'] if local else [])
+        context = browser.new_context(viewport={'width': 390, 'height': 844}, accept_downloads=True, service_workers='allow', extra_http_headers=headers, ignore_https_errors=True)
         protect_test_credential(context)
+        sign_in(context)
         context.add_init_script("""(() => {
           Object.defineProperty(navigator, 'canShare', {value: () => true});
           Object.defineProperty(navigator, 'share', {value: async ({files}) => {window.__shared = files.map(f=>({name:f.name,type:f.type,size:f.size}));}});
@@ -68,8 +83,9 @@ def run(base, report):
         files = page.evaluate('() => window.__shared')
         assert len(files) == 1 and files[0]['type'] == 'image/png'
         passed('Draft included by one Create click; share includes only portable PNG, secret separate', png_bytes=len(art), shared_files=len(files))
-        fresh = browser.new_context(viewport={'width':390, 'height':844}, accept_downloads=True, service_workers='allow', extra_http_headers=headers)
+        fresh = browser.new_context(viewport={'width':390, 'height':844}, accept_downloads=True, service_workers='allow', extra_http_headers=headers, ignore_https_errors=True)
         protect_test_credential(fresh)
+        sign_in(fresh)
         receiver = fresh.new_page()
         receiver.on('pageerror', lambda e: report['page_errors'].append(str(e)))
         receiver.goto(base + '/?modo=recibir', wait_until='networkidle'); wait_ready(receiver)

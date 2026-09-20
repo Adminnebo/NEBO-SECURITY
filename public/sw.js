@@ -1,8 +1,8 @@
 'use strict';
 
-// Private application v10: every request must reach the hosting access gate.
+// Private application v11: every request must reach the server session gate.
 // This worker intentionally creates no cache and has no offline app fallback.
-const PRIVATE_VERSION = 10;
+const PRIVATE_VERSION = 11;
 const OWNED_CACHE = /^nebo-app-v\d+$/;
 const ROOT = new URL('./', self.location.href);
 

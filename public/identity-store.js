@@ -1,5 +1,6 @@
 /* Browser-local receiver identities. Private keys never enter exported JSON. */
 import { generateIdentity, validatePublicBundle } from './secure-worker.js';
+import { accountDatabaseName } from './account-storage.js';
 
 const DB_NAME = 'astra-private-identities-v1';
 const STORE = 'identities';
@@ -8,7 +9,7 @@ let creation;
 
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(accountDatabaseName(DB_NAME), 1);
     request.onupgradeneeded = () => request.result.createObjectStore(STORE);
     request.onerror = () => reject(new Error('No se pudo abrir el almacén de claves de este navegador.'));
     request.onblocked = () => reject(new Error('Cierra otras pestañas de ASTRA y vuelve a intentarlo.'));
