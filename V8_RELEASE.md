@@ -66,3 +66,10 @@ La corrección normaliza la respuesta almacenada para quitar esa marca de
 redirección, conservando el HTML, y renueva la caché a `nebo-app-v9`. Los informes
 públicos de la publicación 9 comprueban el arranque y la recuperación tras un
 cierre completo del navegador, sin reutilizar resultados de localhost.
+
+Resultado público final: `tests/PUBLIC_V9_PWA_REPORT.json`, **12/12 pruebas
+aprobadas** en 8,500 s, cero errores de ejecución. La caché contiene exactamente
+20 activos estáticos; las modalidades de clave secreta e identidad y el formato
+clásico recuperan los originales tras reiniciar Edge sin red.
+`tests/PUBLIC_V9_USERFLOW_REPORT.json` verifica la interfaz publicada y
+`tests/PUBLIC_V9_SOURCE_REPORT.json` compara sus activos con el código del commit.
