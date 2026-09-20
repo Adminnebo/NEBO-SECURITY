@@ -1,0 +1,55 @@
+{
+  "version_number": 8,
+  "source_commit": "e70722d66618bd1b3636ecd434a34eaf92584d9e",
+  "passed": true,
+  "checks": [
+    {
+      "asset": "app.js?v=8",
+      "status": 200,
+      "sha256": "5321478feb47a2fcb59ae4fb6d17daafc65725fd712f3f0820a27c6dbd60b03f",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "styles.css?v=8",
+      "status": 200,
+      "sha256": "7033e8cb93dd00c0063d3f547cfe563f8f427d86700c1b8b09c7dba478cd14d7",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "secure-worker.js",
+      "status": 200,
+      "sha256": "69b335b42c995093686cf34958ff4d68b38a8b30673987779dae607f2d16ca51",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "portable-png.js",
+      "status": 200,
+      "sha256": "17f29a42c79fea351827781fd616cd7e2dba911755cda75041ff85a85359459c",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "cover-planner.js",
+      "status": 200,
+      "sha256": "d129585ef2cb805095aac14c138285948cb88629b069fd0b200905e1d017639d",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "contact-store.js",
+      "status": 200,
+      "sha256": "17fd0d5da182b635fb9c102be24e5f303d33acb6e6434de39bf023f54275b71d",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "sw.js",
+      "status": 200,
+      "sha256": "03d45090b98ea50686b0469d3b66e3ba9a4701385be72fb7ad6a8377bb94d7af",
+      "matches_committed_source": true
+    },
+    {
+      "asset": "manifest.webmanifest",
+      "status": 200,
+      "sha256": "e5b05d5242cd52ca9fb8498a18a1134b3453301acee26ed97f21d04bf3fc0be3",
+      "matches_committed_source": true
+    }
+  ]
+}

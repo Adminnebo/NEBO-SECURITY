@@ -1,12 +1,12 @@
 'use strict';
 
 // Change this version whenever any precached application code changes.
-const CACHE_NAME = 'nebo-app-v8';
+const CACHE_NAME = 'nebo-app-v9';
 const OWNED_CACHE = /^nebo-app-v\d+$/;
 const ROOT = new URL('./', self.location.href);
 const INDEX = new URL('index.html', ROOT).href;
 const STATIC_FILES = [
-  'index.html', 'app.js?v=8', 'theme.js?v=8', 'styles.css?v=8',
+  'index.html', 'app.js?v=9', 'theme.js?v=9', 'styles.css?v=9',
   'codec-worker.js', 'secure-worker.js', 'portable-png.js', 'identity-store.js',
   'bundle.js', 'contact-store.js', 'install.js', 'cover-planner.js', 'manifest.webmanifest',
   'assets/nebo-logo-original.png', 'assets/nebo-symbol.svg',
@@ -38,6 +38,18 @@ function isAppNavigation(url) {
   return correctPath && (url.search === '' || url.search === '?modo=recibir');
 }
 
+function navigationResponse(response) {
+  if (!response.redirected) return response;
+  // Canonical hosting can redirect /index.html to /. A redirected cached
+  // Response is rejected for navigation requests with redirect mode "manual".
+  // Rebuild only the response envelope; the decoded body bytes stay unchanged.
+  const headers = new Headers(response.headers);
+  headers.delete('content-encoding');
+  headers.delete('content-length');
+  headers.delete('transfer-encoding');
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 async function navigation(request) {
   const cache = await caches.open(CACHE_NAME);
   const controller = new AbortController();
@@ -47,12 +59,13 @@ async function navigation(request) {
     if (!response.ok || response.type === 'opaque') throw new Error('Navigation unavailable');
     // Keep the offline document coherent with this version's cached scripts.
     const html = await response.clone().text();
-    if (['app.js?v=8', 'theme.js?v=8', 'styles.css?v=8'].every(path => html.includes(path))) {
+    if (['app.js?v=9', 'theme.js?v=9', 'styles.css?v=9'].every(path => html.includes(path))) {
       await cache.put(INDEX, response.clone());
     }
-    return response;
+    return navigationResponse(response);
   } catch {
-    return await cache.match(INDEX) || new Response('NEBO no está guardado para abrirse sin conexión. Vuelve a conectarte y recarga la página.',
+    const cached = await cache.match(INDEX);
+    return cached ? navigationResponse(cached) : new Response('NEBO no está guardado para abrirse sin conexión. Vuelve a conectarte y recarga la página.',
       { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   } finally { clearTimeout(timer); }
 }

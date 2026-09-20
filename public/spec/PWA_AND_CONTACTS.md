@@ -22,11 +22,11 @@ navegador no ofrece un diálogo programático, el botón muestra instrucciones
 para su menú; en iOS indica Compartir → Añadir a pantalla de inicio.
 No se afirma que una instalación se completó solo porque se pulsó el botón.
 
-La caché `nebo-app-v8` contiene una lista explícita de 20 recursos estáticos:
-HTML, CSS/tema/app versión 8, los dos motores, PNG portátil, planificación de
+La caché `nebo-app-v9` contiene una lista explícita de 20 recursos estáticos:
+HTML, CSS/tema/app versión 9, los dos motores, PNG portátil, planificación de
 portada, identidad, contactos, bundle, instalación, manifest, logos existentes,
 cuatro portadas y el PDF de ejemplo. Cada URL es exacta, incluida la consulta
-`?v=8` de app, tema y CSS. No se cachean POST, otros orígenes, blobs, entradas de
+`?v=9` de app, tema y CSS. No se cachean POST, otros orígenes, blobs, entradas de
 usuarios, tokens, claves, archivos reconstruidos ni URLs con parámetros libres.
 
 La instalación utiliza un lote atómico `Cache.addAll`: si falta un recurso
@@ -74,8 +74,12 @@ Los resultados se guardan en `tests/PWA_CONTACTS_REPORT.json` y
 deliberado en un recurso esencial impide la activación y deja cero entradas
 parciales, conservando la caché anterior y una caché ajena.
 
-Verificación local ejecutada: **12 comprobaciones aprobadas en 20,140 s**,
+Verificación local inicial: **12 comprobaciones aprobadas en 20,140 s**,
 con reinicio completo de Edge y navegación inicial sin conexión. Cero errores
 de ejecución. El navegador devolvió una lista vacía de errores de
 instalabilidad; eso no equivale a haber instalado la aplicación en el sistema
 operativo ni verifica otros navegadores o iOS.
+
+La regresión con redirección canónica y caché v9 pasó en **5,875 s**: reinicio
+completo sin red, respuesta 200, HTML idéntico byte por byte y ambos motores
+listos. Véanse `tests/pwa_redirect_test.py` y `tests/PWA_REDIRECT_REPORT.json`.

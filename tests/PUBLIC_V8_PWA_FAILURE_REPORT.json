@@ -1,0 +1,23 @@
+{
+  "status": "FAIL",
+  "deployment_version": 8,
+  "source_commit": "e70722d66618bd1b3636ecd434a34eaf92584d9e",
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "contact_check_groups_passed": 6,
+  "precache_assets": 20,
+  "cold_offline_navigation": "net::ERR_FAILED",
+  "confirmed_cause": "Hosting redirects /index.html to /. Cached index response is redirected=true; returning it for a navigation with redirect mode manual is rejected.",
+  "observed_cached_index": {
+    "status": 200,
+    "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+    "redirected": true,
+    "type": "basic",
+    "html_has_version_8": true
+  },
+  "service_worker": {
+    "state": "activated",
+    "scope": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/"
+  },
+  "application_success_not_claimed": true,
+  "private_profiles_deleted": true
+}

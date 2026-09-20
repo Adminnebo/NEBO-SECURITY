@@ -85,11 +85,17 @@ def run(args):
                 for check in contacts['checks']:print('PASS '+check['test'],flush=True)
                 registration=page.evaluate("""async()=>{
                   const r=await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('SW install timed out')),60000))]);
+                  const worker=r.active;
+                  if(worker && worker.state!=='activated') await new Promise((resolve,reject)=>{
+                    const timer=setTimeout(()=>reject(Error('SW activation timed out')),30000);
+                    const settled=()=>{if(worker.state==='activated'){clearTimeout(timer);resolve()}else if(worker.state==='redundant'){clearTimeout(timer);reject(Error('SW became redundant'))}};
+                    worker.addEventListener('statechange',settled);settled();
+                  });
                   return {scope:r.scope,active:r.active?.state};
                 }""")
                 assert registration['active']=='activated'
                 inventory=page.evaluate("""async()=>{
-                  const cache=await caches.open('nebo-app-v8');
+                  const cache=await caches.open('nebo-app-v9');
                   return (await cache.keys()).map(r=>({url:r.url,method:r.method}));
                 }""")
                 assert len(inventory)>=20 and all(r['method']=='GET' for r in inventory)
@@ -156,7 +162,7 @@ def run(args):
                     page.locator('#downloadRestored').click()
                 assert Path(download.value.path()).read_bytes()==(legacy/'original.bin').read_bytes()
                 passed('Classic PNG plus token recovers exact original after cold offline browser launch')
-                after_urls=page.evaluate("""async()=> (await (await caches.open('nebo-app-v8')).keys()).map(r=>r.url).sort()""")
+                after_urls=page.evaluate("""async()=> (await (await caches.open('nebo-app-v9')).keys()).map(r=>r.url).sort()""")
                 assert after_urls==sorted(report['cached_urls'])
                 passed('Recovery operations add no artwork, tokens, secrets or files to the application cache')
                 assert not report['page_errors'],report['page_errors']

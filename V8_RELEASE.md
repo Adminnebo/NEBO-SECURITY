@@ -54,3 +54,15 @@ Las pruebas usan contenido sintético y no imprimen claves secretas. Los hashes
 de cada informe corresponden a su ejecución; el cifrado genera nuevos valores
 aleatorios en cada envío. Los informes públicos de esta versión se conservan
 separados de los informes históricos.
+
+## Corrección del alojamiento (publicación 9)
+
+La primera publicación pasó creación y recepción públicas, pero el arranque
+frío offline falló: el alojamiento redirige `index.html` a la raíz. Su respuesta
+se almacenaba con `redirected: true`, que Chromium rechaza al reutilizarla como
+respuesta a una navegación offline. El informe de fallo se conserva.
+
+La corrección normaliza la respuesta almacenada para quitar esa marca de
+redirección, conservando el HTML, y renueva la caché a `nebo-app-v9`. Los informes
+públicos de la publicación 9 comprueban el arranque y la recuperación tras un
+cierre completo del navegador, sin reutilizar resultados de localhost.

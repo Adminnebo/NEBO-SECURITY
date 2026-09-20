@@ -1,0 +1,28 @@
+{
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "checks": [
+    {
+      "test": "Mobile cover and composer visible on first load without clicking",
+      "passed": true
+    },
+    {
+      "test": "Draft included by one Create click; share includes only portable PNG, secret separate",
+      "passed": true,
+      "png_bytes": 1766832,
+      "shared_files": 1
+    },
+    {
+      "test": "Fresh receiver opens PNG + key only; preview immediate; wrong key rejected; bytes exact",
+      "passed": true,
+      "source_sha256": "8dcc7953dc98d8cc7cf089d8cc1a6030e205262bf9dc638f25dc26ef74c9c3d0"
+    },
+    {
+      "test": "Trusted contact UI validates confirmation, persists alias, selects saved public identity, removes without deleting private key",
+      "passed": true
+    }
+  ],
+  "page_errors": [],
+  "passed": true,
+  "version_number": 8,
+  "source_commit": "e70722d66618bd1b3636ecd434a34eaf92584d9e"
+}

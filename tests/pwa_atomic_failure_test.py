@@ -39,7 +39,7 @@ def run():
                 context = browser.new_context(); page = context.new_page()
                 page.goto(f'http://127.0.0.1:{server.server_port}/__test__.html')
                 outcome = page.evaluate("""async()=>{
-                  for(const name of ['other-application-cache','nebo-app-v7']) {
+                  for(const name of ['other-application-cache','nebo-app-v8']) {
                     const c=await caches.open(name);await c.put('./sentinel',new Response('keep'));
                   }
                   const reg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
@@ -49,12 +49,12 @@ def run():
                     const check=()=>{if(worker.state==='redundant'||worker.state==='activated'){clearTimeout(timer);resolve(worker.state)}};
                     worker.addEventListener('statechange',check);check();
                   });
-                  const cached=await caches.open('nebo-app-v8');
+                  const cached=await caches.open('nebo-app-v9');
                   return {state,active:!!reg.active,current_entries:(await cached.keys()).length,cache_names:await caches.keys()};
                 }""")
                 assert outcome['state'] == 'redundant' and not outcome['active']
                 assert outcome['current_entries'] == 0
-                assert all(name in outcome['cache_names'] for name in ['other-application-cache','nebo-app-v7'])
+                assert all(name in outcome['cache_names'] for name in ['other-application-cache','nebo-app-v8'])
             finally:
                 browser.close()
     finally:

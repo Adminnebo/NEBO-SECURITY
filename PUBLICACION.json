@@ -4,9 +4,9 @@
   "receiver_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir",
   "access_mode": "public",
   "project_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c",
-  "version_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c~appgver_fd11329ce30081919c169eb5175b3962",
-  "version_number": 7,
-  "deployment_id": "appgdep_6aad96d136ec8191972f4099b52283c0",
-  "commit_sha": "728cc79fb9851110ec6280f699ecfeda9290eac2",
-  "deployed_at": "2026-09-18T19:54:00.964934+00:00"
+  "version_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c~appgver_9d3caac74bcc8191b1f0eced0952b7c7",
+  "version_number": 8,
+  "deployment_id": "appgdep_6aafddc4febc8191a6fb925f70f5d8b1",
+  "commit_sha": "e70722d66618bd1b3636ecd434a34eaf92584d9e",
+  "deployed_at": "2026-09-20T13:21:17.605922+00:00"
 }

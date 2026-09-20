@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "application_cache": "nebo-app-v9",
+  "canonical_redirect": "/index.html -> /",
+  "cached_response_redirected": true,
+  "real_browser_restart": true,
+  "offline_before_navigation": true,
+  "offline_navigation_status": 200,
+  "offline_html_bytes_identical": true,
+  "both_codecs_ready": true,
+  "seconds": 5.875
+}
