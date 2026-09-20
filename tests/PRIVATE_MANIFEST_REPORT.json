@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "test": "Anonymous manifest and install icon are protected by the synthetic HTTP-only session gate",
+      "passed": true
+    },
+    {
+      "test": "The real page starts with an HTTP-only session and a use-credentials manifest link",
+      "passed": true,
+      "cookie_visible_to_page_javascript": false
+    },
+    {
+      "test": "Browser manifest request includes the session cookie and CDP parses the protected standalone manifest",
+      "passed": true,
+      "manifest_url": "http://127.0.0.1:61073/manifest.webmanifest",
+      "manifest_requests": 1,
+      "every_manifest_request_authenticated": true,
+      "display": "standalone",
+      "parser_error_count": 0
+    },
+    {
+      "test": "CDP installability audit reports zero errors for the authenticated page",
+      "passed": true,
+      "installability_error_count": 0
+    },
+    {
+      "test": "Negative control without crossorigin omits the cookie and cannot load the protected manifest",
+      "passed": true,
+      "manifest_denied_without_cookie": true,
+      "repository_files_modified": false
+    }
+  ],
+  "page_error_types": [],
+  "browser": "Microsoft Edge",
+  "service_workers": "allow",
+  "positive_case_uses_fresh_temporary_persistent_profile": true,
+  "synthetic_local_session_only": true,
+  "real_provider_or_cookies_used": false,
+  "cookie_values_logged": false,
+  "application_sources_modified": false,
+  "focus_revalidation_scope": "Not retested here; the earlier bootstrap report predates the focus listener addition.",
+  "local_origin": "http://127.0.0.1:61073",
+  "positive_installability_error_ids": [],
+  "seconds": 21.297
+}

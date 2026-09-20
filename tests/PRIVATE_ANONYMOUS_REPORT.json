@@ -1,0 +1,223 @@
+{
+  "status": "PASS",
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+  "checks": [
+    {
+      "route": "root",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 4113,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "receiver_link",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+      "receiver_mode_parameter": true,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 4147,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "html",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/index.html",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/index.html",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/index.html",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 4133,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "app_script",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/app.js",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/app.js",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/app.js",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 3187,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "crypto_worker",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/secure-worker.js",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/secure-worker.js",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/secure-worker.js",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 3207,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "service_worker",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/sw.js",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/sw.js",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/sw.js",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 3185,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "manifest",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/manifest.webmanifest",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/manifest.webmanifest",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/manifest.webmanifest",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 4153,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    },
+    {
+      "route": "access_check_if_deployed",
+      "requested_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/access-check.json",
+      "receiver_mode_parameter": false,
+      "fresh_context": true,
+      "initial_cookie_count": 0,
+      "login_clicked": false,
+      "bypass_used": false,
+      "status": 401,
+      "final_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/access-check.json",
+      "navigation_responses": [
+        {
+          "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/access-check.json",
+          "status": 401
+        }
+      ],
+      "category": "sign_in_required",
+      "content_type": "text/html",
+      "response_bytes": 4147,
+      "login_prompt_detected": true,
+      "sign_in_required_title_or_body": true,
+      "provider_hint": "ChatGPT",
+      "application_controls": 0,
+      "application_payload_exposed": false,
+      "passed": true
+    }
+  ],
+  "browser": "Microsoft Edge",
+  "anonymous": true,
+  "contexts_reused": false,
+  "authentication_attempted": false,
+  "bypass_used": false,
+  "records_cookies_or_authentication_parameters": false,
+  "scope": "Fresh anonymous access only; authenticated-owner access is not tested.",
+  "application_payloads_exposed": 0,
+  "seconds": 12.734
+}

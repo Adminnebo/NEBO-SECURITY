@@ -1,5 +1,10 @@
 # Seguridad de ASTRA: modo privado V2
 
+La publicación de aplicación 10 añade acceso restringido en el alojamiento.
+Su política actual está en [PRIVATE_ACCESS.md](PRIVATE_ACCESS.md). La PWA ya no
+precarga la aplicación ni permite reabrirla sin conexión. El formato cifrado V2
+y la recuperación exacta de archivos mantienen la compatibilidad anterior.
+
 El modo privado cifra el archivo completo y el token antes de entregarlos. La
 imagen visible es una portada elegida por el usuario: los datos cifrados se
 transportan dentro de los bits de sus canales RGB. Es un formato diferente de
@@ -51,8 +56,8 @@ usarse como si fuese una vista previa protegida del documento.
    validación de tamaños antes de asignar memoria, rechazo de formatos extraños
    y documentación versionada. Los informes describen lo ejecutado; no son una
    certificación ni una auditoría externa profesional.
-7. **Caché y contactos limitados.** La PWA solo almacena los recursos estáticos
-   enumerados de la aplicación, nunca los envíos ni sus secretos. La libreta
+7. **Caché y contactos limitados.** La PWA privada no almacena recursos protegidos
+   ni ofrece una copia offline de la aplicación. La libreta
    contiene nombres e identidades públicas verificadas, separada de la base
    de identidades privadas. No constituye una sincronización o respaldo remoto.
 

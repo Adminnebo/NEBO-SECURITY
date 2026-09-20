@@ -2,6 +2,8 @@
 import argparse
 import hashlib
 import json
+import os
+from urllib.parse import urlsplit
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 from multi_message_test import wait_ready, wait_result, download, upload, EDGE
@@ -9,12 +11,26 @@ from multi_message_test import wait_ready, wait_result, download, upload, EDGE
 ROOT = Path(__file__).resolve().parents[1]
 
 def run(base, report):
+    # Optional owner-only hosting test credential; never written to reports or disk.
+    owner_token = os.environ.pop('NEBO_SITES_AUDIT_TOKEN', '')
+    headers = {'OAI-Sites-Authorization': 'Bearer ' + owner_token} if owner_token else {}
+    report['access_check'] = 'owner_testing_header' if owner_token else 'normal_browser'
+    def protect_test_credential(ctx):
+        if not owner_token: return
+        allowed_origin = urlsplit(base).netloc
+        def route_request(route):
+            target = urlsplit(route.request.url)
+            if target.scheme in ('http', 'https') and target.netloc != allowed_origin:
+                route.abort()
+            else: route.continue_()
+        ctx.route('**/*', route_request)
     def passed(name, **details):
         report['checks'].append({'test': name, 'passed': True, **details})
         print('PASS ' + name, flush=True)
     with sync_playwright() as pw:
         browser = pw.chromium.launch(executable_path=EDGE, headless=True)
-        context = browser.new_context(viewport={'width': 390, 'height': 844}, accept_downloads=True, service_workers='block')
+        context = browser.new_context(viewport={'width': 390, 'height': 844}, accept_downloads=True, service_workers='allow', extra_http_headers=headers)
+        protect_test_credential(context)
         context.add_init_script("""(() => {
           Object.defineProperty(navigator, 'canShare', {value: () => true});
           Object.defineProperty(navigator, 'share', {value: async ({files}) => {window.__shared = files.map(f=>({name:f.name,type:f.type,size:f.size}));}});
@@ -48,7 +64,8 @@ def run(base, report):
         files = page.evaluate('() => window.__shared')
         assert len(files) == 1 and files[0]['type'] == 'image/png'
         passed('Draft included by one Create click; share includes only portable PNG, secret separate', png_bytes=len(art), shared_files=len(files))
-        fresh = browser.new_context(viewport={'width':390, 'height':844}, accept_downloads=True, service_workers='block')
+        fresh = browser.new_context(viewport={'width':390, 'height':844}, accept_downloads=True, service_workers='allow', extra_http_headers=headers)
+        protect_test_credential(fresh)
         receiver = fresh.new_page()
         receiver.on('pageerror', lambda e: report['page_errors'].append(str(e)))
         receiver.goto(base + '/?modo=recibir', wait_until='networkidle'); wait_ready(receiver)

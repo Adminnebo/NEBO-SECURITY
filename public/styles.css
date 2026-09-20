@@ -734,3 +734,59 @@ html[data-theme="dark"] .app-availability #installStatus{color:#a1a1a1}
 /* Small supporting text stays legible on the pearl and white surfaces. */
 html[data-theme="light"]{--muted:#666666}
 html[data-theme="light"] :is(.intro p,.eyebrow,.browser-badge,.panel-heading p,.drop-zone small,.drop-zone>span:not(.upload-icon),.alternative,.input-note,.cover-visibility,.cover-selects label,.cover-reference span,.mode-choice p,.mode-tab,.mode-tab small,.control-heading>span,.output-empty p,.output-empty h3,.empty-status,.secret-result p,.identity-section>summary small,.steps p,.artwork-caption,.pair-note,.receive-file small,.result-stats,.selected-file small,.custom-cover-info span,.access-options small,.identity-caution,.technical-detail,footer,#mobileHint){color:#666666}
+
+/* Private entry remains separate from the workspace until access is confirmed. */
+body:not([data-access="granted"]){padding-bottom:0}
+body:not([data-access="granted"]) main,body:not([data-access="granted"]) #mobileDock{display:none!important}
+body:not([data-access="granted"]) #installShortcut,body:not([data-access="granted"]) .help-link{display:none!important}
+body[data-access="granted"] #accessGate{display:none!important}
+.site-header{padding-top:env(safe-area-inset-top,0px)}
+.access-gate{display:grid;place-items:center;min-height:calc(100svh - 93px - env(safe-area-inset-top,0px));padding:40px 24px}
+.access-card{width:min(100%,430px);padding:35px 32px 28px;text-align:center;background:#ffffff;border:1px solid #e0e0e0;border-radius:22px;box-shadow:0 8px 36px #20202005}
+.access-lock{display:grid;place-items:center;width:61px;height:61px;border-radius:19px;background:#efefef;color:#626262;margin:0 auto 23px}
+.access-lock svg{display:block;width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.access-eyebrow{display:block;color:#757575;font-size:9px;font-weight:650;letter-spacing:.16em;line-height:1.4;margin-bottom:12px}
+.access-card h1{font-size:28px;line-height:1.15;letter-spacing:-.035em;color:#323232;font-weight:650;margin:0 0 14px}
+#accessDescription{font-size:13px;line-height:1.65;color:#808080;margin:0 auto 21px;max-width:340px}
+.access-status{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;line-height:1.55;color:#6f6f6f;background:#f6f6f6;border:1px solid #ebebeb;border-radius:10px;padding:12px;min-height:45px;margin:0 0 17px;overflow-wrap:anywhere}
+.access-status:before{content:'';width:5px;height:5px;flex-shrink:0;border-radius:50%;background:currentColor;opacity:.65}
+.access-status:empty{display:none}
+#accessRetry{width:100%;min-height:48px;font-size:13px;border-radius:11px;padding:12px 16px}
+.access-footnote{font-size:11px;color:#757575;line-height:1.65;margin:18px 0 0}
+.install-shortcut{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;width:44px;height:44px;padding:10px;border:1px solid #dfdfdf;border-radius:12px;background:#f6f6f6;color:#6c6c6c;cursor:pointer;flex-shrink:0}
+.install-shortcut svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+.install-shortcut:hover{background:#ebebeb;border-color:#cfcfcf}
+.private-access-badge>span{background:#989898}
+.app-availability .install-guide{max-width:530px;font-size:11px;line-height:1.65;color:#686868;margin-top:12px}
+.install-guide strong{color:#777777;font-weight:600}
+.app-availability .access-connection-note{max-width:530px;font-size:11px;line-height:1.6;color:#686868;margin-top:9px}
+body[data-access="denied"] .access-status{background:#fbf2ed;border-color:#ead8d0;color:#a66857}
+body[data-access="offline"] .access-status{background:#faf5e8;border-color:#e8ddbf;color:#947a40}
+html[data-theme="dark"] .access-card{background:#282828;border-color:#484848;box-shadow:0 8px 36px #0000000f}
+html[data-theme="dark"] .access-lock{background:#414141;color:#cfcfcf}
+html[data-theme="dark"] .access-eyebrow{color:#bbbbbb}
+html[data-theme="dark"] .access-card h1{color:#e9e9e9}
+html[data-theme="dark"] #accessDescription{color:#bcbcbc}
+html[data-theme="dark"] .access-status{background:#353535;border-color:#545454;color:#bebebe}
+html[data-theme="dark"] .access-footnote{color:#a7a7a7}
+html[data-theme="dark"] .install-shortcut{background:#363636;border-color:#565656;color:#d0d0d0}
+html[data-theme="dark"] .install-shortcut:hover{background:#4d4d4d;border-color:#757575}
+html[data-theme="dark"] .private-access-badge>span{background:#a8a8a8}
+html[data-theme="dark"] .app-availability .install-guide{color:#bcbcbc}
+html[data-theme="dark"] .install-guide strong{color:#dddddd}
+html[data-theme="dark"] .app-availability .access-connection-note{color:#acacac}
+html[data-theme="dark"] body[data-access="denied"] .access-status{background:#402e29;border-color:#704b3e;color:#ddb4a2}
+html[data-theme="dark"] body[data-access="offline"] .access-status{background:#3d3626;border-color:#70613c;color:#d4c291}
+@media(max-width:760px){
+  .access-gate{min-height:calc(100svh - 81px - env(safe-area-inset-top,0px));padding:26px 20px 35px}
+  .access-card{max-width:390px;padding:28px 23px 24px;border-radius:20px}
+  .access-lock{width:57px;height:57px;border-radius:17px;margin-bottom:21px}
+  .access-card h1{font-size:26px}.access-eyebrow{font-size:8px}#accessDescription{font-size:12px;line-height:1.65;margin-bottom:20px}
+  .access-status{font-size:11px;line-height:1.65;margin-bottom:16px;min-height:44px}
+  .access-footnote{font-size:11px;line-height:1.65}
+  .install-shortcut{margin-left:auto}.header-inner .theme-toggle{margin-left:0}
+  body:not([data-access="granted"]) .header-inner .theme-toggle{margin-left:auto}
+  .app-availability .install-guide{font-size:12px;line-height:1.65}.app-availability .access-connection-note{font-size:11px;line-height:1.65}
+}
+@media(max-width:480px){.header-inner .theme-toggle{width:44px;min-width:44px;padding:10px}.header-inner #themeToggleLabel{display:none}}
+@media(max-width:359px){.access-gate{padding:20px 14px 28px}.access-card{padding:26px 20px 22px}.access-card h1{font-size:24px}#accessDescription{font-size:12px}.access-status{padding:11px 9px}}

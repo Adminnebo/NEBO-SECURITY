@@ -2,7 +2,7 @@
   "status": "succeeded",
   "url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
   "receiver_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir",
-  "access_mode": "public",
+  "access_mode": "custom",
   "project_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c",
   "version_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c~appgver_afbbf6a965d481918d7b458cbd41cc10",
   "version_number": 9,

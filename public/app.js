@@ -5,7 +5,7 @@ import { estimateCiphertextBytes } from './secure-worker.js';
 import { unpackPortablePNG } from './portable-png.js';
 import { planCover } from './cover-planner.js';
 import { listContacts, saveContact, removeContact } from './contact-store.js';
-import { initInstallUI } from './install.js';
+import { initInstallUI } from './install.js?v=10';
 
 const $ = id => document.getElementById(id);
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
@@ -441,6 +441,7 @@ async function preparePreview(file, bytes) {
 }
 function downloadName(name) { return name.replace(/\.[^.]+$/, '').replace(/[^\p{L}\p{N}._-]+/gu, '-').slice(0, 80) || 'archivo'; }
 async function encode() {
+  if (state.busy || !window.NEBO_ACCESS || !await window.NEBO_ACCESS.require()) return;
   if (state.busy || state.contactBusy || state.recording || state.preparingMicrophone || !addDraftMessage() || !state.file) return;
   const privateMode = $('encodingMode').value === 'private'; const accessMode = document.querySelector('input[name=accessMode]:checked').value;
   if (privateMode && accessMode === 'recipient' && (state.recipientLoading || !state.recipient || !$('recipientVerified').checked)) { errorFor('sender', 'Carga la identidad pública y confirma su huella por otro canal.'); return; }
@@ -538,6 +539,7 @@ async function setReceived(kind, file) {
   updateReceiverAccess(); updateButtons();
 }
 async function decode() {
+  if (state.busy || !window.NEBO_ACCESS || !await window.NEBO_ACCESS.require()) return;
   if (state.busy || state.inspectingArt || !state.receivedArt || (!state.embeddedToken && !state.receivedToken)) return;
   const serial = beginTask('receiver');
   try {
@@ -754,6 +756,15 @@ $('exportIdentity').addEventListener('click', async () => { try { const json = a
 $('clearIdentity').addEventListener('click', async () => { if (!window.confirm('Si eliminas esta identidad, no podrás abrir los envíos dirigidos a ella. ¿Eliminar identidad de este navegador?')) return; try { await clearIdentity(); await refreshIdentity(); toast('Identidad local eliminada.'); } catch (error) { $('identityStatus').textContent = error.message; } });
 document.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) event.preventDefault(); }); document.addEventListener('drop', event => event.preventDefault());
 window.addEventListener('beforeunload', () => { state.recording?.stream.getTracks().forEach(track => track.stop()); });
+// A failed authorization check closes the in-memory session. Reload goes
+// through the hosting gate; identities in IndexedDB are deliberately retained.
+window.addEventListener('nebo:access-locked', () => {
+  state.recording?.stream.getTracks().forEach(track => track.stop());
+  for (const worker of Object.values(state.workers)) worker?.terminate();
+  for (const url of state.urls) URL.revokeObjectURL(url);
+  $('recoverySecret').value = ''; $('receivedSecret').value = '';
+  location.reload();
+}, { once: true });
 function applyResponsiveLayout() {
   $('advancedOptions').open = !mobileScreen.matches;
   $('advancedAccess').open = !mobileScreen.matches || document.querySelector('input[name=accessMode]:checked').value === 'recipient';

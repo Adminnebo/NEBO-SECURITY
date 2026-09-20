@@ -1,5 +1,20 @@
 # NEBO AI - SECURITY
 
+**Versión privada 10.** El sitio exige iniciar sesión mediante el alojamiento
+con una cuenta de ChatGPT autorizada. El acceso está configurado por invitación;
+inicialmente solo entra el propietario. No existe registro público. La rama
+`version-10-acceso-privado` conserva esta modalidad por separado de
+`version-9-png-token-integrado` y `version-7-anterior`.
+
+El control real se aplica en el servidor antes de entregar HTML, JavaScript y
+otros recursos. El formulario de acceso pertenece al alojamiento, no es una
+contraseña simulada dentro del JavaScript de NEBO. Para permitir otra persona,
+el propietario debe incorporarla expresamente a la lista de acceso de Sites.
+
+La app necesita conexión para comprobar la autorización al entrar y antes de
+crear o abrir un envío. Una sesión que deja de verificarse se cierra y descarta
+los datos de trabajo en memoria. Las identidades locales de recepción se conservan.
+
 Interfaz móvil con temas claro y oscuro. El botón de sol/luna de la cabecera
 cambia el tema y recuerda la selección en este navegador. La primera visita
 usa la preferencia de color del dispositivo.
@@ -115,19 +130,23 @@ el original. Antes de crear se muestra un límite superior de tamaño; después,
 el tamaño real del PNG. El token cifrado suele ocupar unos KB y puede descargarse
 para consultar su tamaño exacto. No se comprimen con pérdida los adjuntos.
 
-## Instalar y recuperar sin conexión
+## Instalar en el móvil y comprobar acceso
 
 En **Ayuda → Instalar aplicación**, usa el instalador del navegador cuando esté
-disponible. En Safari iOS: Compartir → Añadir a pantalla de inicio. También
-puedes usar la web sin instalarla. Espera el estado **Aplicación guardada**
-en Ayuda antes de desconectarte por primera vez.
+disponible, o pulsa el icono de instalación de la cabecera. En Safari iOS:
+Compartir → Añadir a pantalla de inicio. Al abrirla desde el icono instalado,
+un navegador compatible muestra una ventana de app sin la barra habitual.
+La dirección sigue existiendo y se muestra si abres NEBO como pestaña web.
 
-La caché conserva solo los 20 recursos estáticos de la aplicación. No guarda
-adjuntos, PNG de envíos, tokens ni claves secretas. Se verificó el arranque en
-un proceso de navegador nuevo y sin red, seguido de recuperación exacta.
-Las actualizaciones esperan a que cierres las pestañas de NEBO; no interrumpen
-una conversión activa. La instalación y la conservación del almacenamiento
-dependen del navegador. [Detalles de PWA y contactos](public/spec/PWA_AND_CONTACTS.md).
+La versión privada no guarda la app para reabrirla sin conexión. Cada petición
+llega al servidor; una denegación o un fallo de red nunca devuelve la app desde
+la caché. La actualización elimina solo las cachés antiguas de NEBO y conserva
+IndexedDB, sus identidades y contactos. La instalación depende del navegador.
+[Política privada y migración](public/spec/PRIVATE_ACCESS.md).
+
+Las versiones anteriores ya descargadas o clonadas no pueden revocarse a
+distancia. Su código y las pruebas de recuperación offline permanecen en las
+ramas anteriores; esos informes no describen la política de acceso actual.
 
 ## Implementación y pruebas
 
@@ -135,7 +154,9 @@ dependen del navegador. [Detalles de PWA y contactos](public/spec/PWA_AND_CONTAC
 - `public/portable-png.js`: integración y extracción del token cifrado `neBo`.
 - `public/cover-planner.js`: capacidad y dimensiones automáticas sin cambiar adjuntos.
 - `public/contact-store.js`: libreta local de identidades públicas verificadas.
-- `public/sw.js`, `public/install.js`: caché estática, instalación y estado offline.
+- `public/access.js`, `public/access-check.json`: comprobación del recurso protegido
+  por el alojamiento, migración de caché y entrada a la app; no reemplazan al servidor.
+- `public/sw.js`, `public/install.js`: transporte sin caché e instalación privada.
 - `public/identity-store.js`: identidad privada local y exportación pública.
 - `public/codec-worker.js`: compatibilidad y permutación clásica.
 - `public/spec/SECURE_CODEC.md`: especificación interoperable V2.
@@ -194,8 +215,10 @@ node tests/test_portable_png.mjs
 python tests/verify_portable_png.py
 python tests/v8_userflow_test.py --base-url http://127.0.0.1:8770
 python tests/multi_message_test.py --base-url http://127.0.0.1:8770
-python tests/pwa_contacts_test.py --base-url http://127.0.0.1:8770
 python tests/recipient_race_test.py --base-url http://127.0.0.1:8770
+python tests/private_sw_test.py
+python tests/private_bootstrap_test.py
+python tests/private_anonymous_test.py
 ```
 
 Los scripts usan Microsoft Edge en Windows. `MOBILE_RELEASE.md` explica el
@@ -205,3 +228,9 @@ público. Los informes antiguos conservan los resultados de sus versiones;
 `tests/PORTABLE_CODEC_REPORT.json` documentan las pruebas de esta actualización.
 Estas pruebas usan navegadores de escritorio y tamaños móviles emulados;
 no equivalen a una prueba en teléfonos físicos o a una auditoría externa.
+
+Los informes `PRIVATE_*` documentan la versión privada. Una prueba local con
+`python -m http.server` no aplica autenticación de servidor: sirve para desarrollo.
+Para alojar esta rama fuera de Sites hay que proteger **todas** sus rutas mediante
+un control de acceso equivalente. Publicar el archivo `access-check.json` por sí
+solo no autentica a nadie. Nunca distribuyas credenciales del alojamiento al cliente.

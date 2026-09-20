@@ -1,0 +1,94 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "test": "Startup denial: denied_401",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Startup denial: denied_403",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Startup denial: html_login_200",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Startup denial: wrong_format",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Startup denial: wrong_version",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Startup denial: malformed_json",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Startup denial: redirect_login",
+      "passed": true,
+      "main_hidden": true,
+      "app_imported": false,
+      "codec_workers_created": 0
+    },
+    {
+      "test": "Valid JSON grants startup, imports app and starts both codec workers with active service worker",
+      "passed": true,
+      "codec_workers_created": 2
+    },
+    {
+      "test": "Encode performs a new authorization probe before producing a private PNG",
+      "passed": true,
+      "new_probes": 1
+    },
+    {
+      "test": "Decode performs a new authorization probe and restores exact original bytes",
+      "passed": true,
+      "new_probes": 1,
+      "exact_byte_recovery": true
+    },
+    {
+      "test": "Authorization revoked before encode locks, terminates workers, clears secrets and reloads without cached reopening",
+      "passed": true,
+      "revoke_status": 401,
+      "worker_terminations": 2,
+      "reload_stays_denied": true
+    },
+    {
+      "test": "Returning visible after 15s revalidates, locks revoked access and reloads without cached reopening",
+      "passed": true,
+      "revoke_status": 403,
+      "synthetic_visibility_event": true,
+      "actual_elapsed_guard_ms": 15500
+    }
+  ],
+  "page_error_types": [],
+  "browser": "Microsoft Edge",
+  "service_workers": "allow",
+  "synthetic_authorization_server": true,
+  "static_assets_available_even_when_denied": true,
+  "static_http_cache_max_age_seconds": 3600,
+  "private_cache_and_identity_tests_delegated": true,
+  "logs_secrets_or_authentication_values": false,
+  "local_origin": "http://127.0.0.1:59230",
+  "seconds": 36.844
+}

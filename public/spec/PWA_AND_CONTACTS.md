@@ -1,5 +1,9 @@
 # Aplicación sin conexión y contactos públicos
 
+> Documento histórico de la modalidad pública 9, conservada en la rama
+> `version-9-png-token-integrado`. La modalidad privada 10 reemplaza la caché
+> offline por validación en el alojamiento: véase [PRIVATE_ACCESS.md](PRIVATE_ACCESS.md).
+
 `contact-store.js` ofrece `listContacts()`, `saveContact(name, publicBundle)` y
 `removeContact(fingerprint)`. Cada contacto contiene exclusivamente `id`, `name`,
 `publicBundle` y `createdAt`, en IndexedDB `nebo-public-contacts-v1`, almacén

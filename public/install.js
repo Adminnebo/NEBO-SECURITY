@@ -1,4 +1,4 @@
-/* Installation is optional. Transfers and keys never enter the service-worker cache. */
+/* Installation adds a home-screen icon; access still requires the server. */
 let initialized;
 
 export function initInstallUI() {
@@ -8,78 +8,71 @@ export function initInstallUI() {
 }
 
 async function initialize() {
-  const button = document.getElementById('installApp');
+  const buttons = ['installApp', 'installShortcut'].map(id => document.getElementById(id)).filter(Boolean);
   const status = document.getElementById('installStatus');
   const offline = document.getElementById('offlineStatus');
   const say = text => { if (status) status.textContent = text; };
+  const labelButtons = (text, disabled) => {
+    for (const button of buttons) {
+      button.disabled = disabled;
+      if (button.id === 'installShortcut') {
+        button.title = text;
+        button.setAttribute('aria-label', text);
+      } else button.textContent = text;
+    }
+  };
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-  let deferred, ready = false;
-  const offlineStatus = () => {
-    if (!offline) return;
-    offline.textContent = ready
-      ? navigator.onLine ? 'Aplicación guardada para abrir y recuperar envíos sin conexión.' : 'Sin conexión · la aplicación guardada puede recuperar tus envíos.'
-      : navigator.onLine ? 'Preparando la aplicación para usarla sin conexión…' : 'Sin conexión. Conéctate una vez para guardar la aplicación.';
+  let deferred;
+  const connectionStatus = () => {
+    if (offline) offline.textContent = navigator.onLine
+      ? 'Necesitas internet para abrir NEBO y comprobar tu acceso.'
+      : 'Sin conexión. Conéctate para abrir la aplicación privada.';
   };
   const installed = () => {
-    if (button) { button.disabled = true; button.textContent = 'Aplicación instalada'; }
-    say('NEBO está abierto como aplicación. Tus datos siguen guardados solo en este navegador.');
+    labelButtons('Aplicación instalada', true);
+    say('NEBO está abierto como aplicación. Necesitas internet para comprobar tu acceso al abrirla.');
   };
-  if (button) {
+  const showInstructions = () => {
+    say(ios ? 'En Safari, toca Compartir y después Añadir a pantalla de inicio. Abre NEBO desde su icono para usarlo sin la barra del navegador.'
+      : 'Abre el menú de tu navegador y busca Instalar aplicación o Añadir a pantalla de inicio. Después abre NEBO desde su icono.');
+    // The header shortcut must reveal instructions when no native prompt exists.
+    const details = status?.closest('details');
+    if (details) details.open = true;
+    status?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  for (const button of buttons) {
     button.classList.remove('hidden');
     button.addEventListener('click', async () => {
       if (standalone()) { installed(); return; }
-      if (deferred) {
-        const prompt = deferred; deferred = null;
-        try {
-          await prompt.prompt();
-          const result = await prompt.userChoice;
-          say(result.outcome === 'accepted' ? 'Instalación solicitada. El navegador completará el proceso.' : 'Puedes instalar NEBO más adelante.');
-        } catch { say('No se pudo abrir la instalación. Usa el menú del navegador para añadir NEBO a tu dispositivo.'); }
-      } else {
-        say(ios ? 'En Safari, toca Compartir y después Añadir a pantalla de inicio.'
-          : 'Abre el menú de tu navegador y busca Instalar aplicación o Añadir a pantalla de inicio. Si no aparece, puedes seguir usando esta página.');
-      }
+      if (!deferred) { showInstructions(); return; }
+      const prompt = deferred; deferred = null;
+      try {
+        await prompt.prompt();
+        const result = await prompt.userChoice;
+        say(result.outcome === 'accepted' ? 'Instalación solicitada. El navegador completará el proceso.' : 'Puedes instalar NEBO más adelante.');
+      } catch { showInstructions(); }
     });
   }
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault(); deferred = event;
-    if (button) { button.disabled = false; button.textContent = 'Instalar aplicación'; }
-    say('Puedes añadir NEBO a tu dispositivo desde este botón.');
+    labelButtons('Instalar aplicación', false);
+    say('Añade NEBO a tu pantalla de inicio. El acceso seguirá protegido al abrirlo.');
   });
   window.addEventListener('appinstalled', () => { deferred = null; installed(); });
-  window.addEventListener('online', offlineStatus);
-  window.addEventListener('offline', offlineStatus);
+  window.addEventListener('online', connectionStatus);
+  window.addEventListener('offline', connectionStatus);
   if (standalone()) installed();
-  offlineStatus();
+  connectionStatus();
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   if (!('serviceWorker' in navigator) || !isSecureContext || location.protocol !== 'https:' && !local) {
-    if (offline) offline.textContent = 'El guardado sin conexión requiere HTTPS y un navegador compatible.';
+    say('Puedes usar la web con tu acceso autorizado. Instalarla requiere HTTPS y un navegador compatible.');
     return null;
   }
   try {
-    const registration = await navigator.serviceWorker.register(new URL('./sw.js', import.meta.url), { scope: './', updateViaCache: 'none' });
-    const waiting = () => {
-      if (registration.waiting) say('Hay una actualización lista. Se aplicará al cerrar las pestañas de NEBO y volver a abrir la aplicación.');
-    };
-    waiting();
-    const watchInstallation = worker => {
-      if (!worker) return;
-      const changed = () => {
-        if (worker.state === 'installed') waiting();
-        if (worker.state === 'redundant' && !registration.active && offline) {
-          offline.textContent = 'No se pudo guardar la aplicación completa. Comprueba la conexión y recarga para reintentar.';
-        }
-      };
-      worker.addEventListener('statechange', changed);
-      changed();
-    };
-    watchInstallation(registration.installing);
-    registration.addEventListener('updatefound', () => watchInstallation(registration.installing));
-    navigator.serviceWorker.ready.then(() => { ready = true; offlineStatus(); }).catch(() => {});
-    return registration;
+    return await navigator.serviceWorker.register(new URL('./sw.js?v=10', import.meta.url), { scope: './', updateViaCache: 'none' });
   } catch {
-    if (offline) offline.textContent = 'No se pudo guardar la aplicación sin conexión. Comprueba la conexión o los permisos de almacenamiento y recarga.';
+    say('No se pudo preparar la instalación. Comprueba la conexión y vuelve a cargar NEBO.');
     return null;
   }
 }

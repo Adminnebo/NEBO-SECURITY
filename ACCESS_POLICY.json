@@ -1,0 +1,12 @@
+{
+  "project_id": "appgprj_6aad65cb7a74819183d7ad8f42fc071c",
+  "provider": "Sites Sign in with ChatGPT",
+  "access_mode": "custom",
+  "owner_only": true,
+  "external_visitors": 0,
+  "allowed_groups": 0,
+  "policy_revision": 3,
+  "public_signup": false,
+  "server_policy_required": true,
+  "note": "Documentation only; the hosting access policy enforces authorization."
+}

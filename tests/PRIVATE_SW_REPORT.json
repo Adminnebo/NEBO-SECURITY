@@ -1,0 +1,75 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "test": "A fresh anonymous visitor cannot fetch the application or its JavaScript",
+      "passed": true
+    },
+    {
+      "test": "The real v9 worker installs its complete 20-resource cache",
+      "passed": true
+    },
+    {
+      "test": "The legacy cached application is reproducibly available offline before migration",
+      "passed": true
+    },
+    {
+      "test": "v10 takes control immediately and removes only caches matching nebo-app-vN",
+      "passed": true,
+      "caches": [
+        "other-application-cache",
+        "nebo-app-v9-backup"
+      ]
+    },
+    {
+      "test": "The real private CryptoKey and saved public contact survive migration",
+      "passed": true
+    },
+    {
+      "test": "Repeated static fetches reach the server despite its cacheable asset headers",
+      "passed": true
+    },
+    {
+      "test": "Both install buttons expose usable instructions and state the internet requirement",
+      "passed": true
+    },
+    {
+      "test": "Hosting 401 passes through for navigation and JavaScript without cached application",
+      "passed": true
+    },
+    {
+      "test": "Hosting 403 passes through for navigation and JavaScript without cached application",
+      "passed": true
+    },
+    {
+      "test": "Hosting 503 passes through for navigation and JavaScript without cached application",
+      "passed": true
+    },
+    {
+      "test": "A hosting login redirect reaches the browser without returning cached app HTML",
+      "passed": true
+    },
+    {
+      "test": "No private response, login page, denial or static resource creates a new app cache",
+      "passed": true
+    },
+    {
+      "test": "An offline JavaScript fetch returns 503 instead of legacy cached code",
+      "passed": true
+    },
+    {
+      "test": "Cold offline launch after a full browser restart shows only the connection notice",
+      "passed": true
+    },
+    {
+      "test": "Private identity and unrelated caches persist after restart without storing the app",
+      "passed": true
+    }
+  ],
+  "server": "local hosting access-gate stub",
+  "browser": "Microsoft Edge, automated desktop",
+  "private_version": 10,
+  "real_browser_restart": true,
+  "profile_deleted": true,
+  "seconds": 7.125
+}
