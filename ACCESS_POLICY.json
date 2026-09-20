@@ -7,7 +7,9 @@
   "session_cookie": "__Host-nebo_session",
   "session_hours": 8,
   "private_assets": "embedded_server_module",
-  "hosting_access_during_validation": "custom_owner_only",
-  "hosting_access_after_native_auth_verification": "public_login_page_with_server_protected_application",
-  "note": "Documentation only. Worker sessions and deployed runtime configuration enforce access."
+  "note": "Documentation only. Worker sessions and deployed runtime configuration enforce access.",
+  "hosting_access": "public",
+  "hosting_access_revision": 4,
+  "application_access": "private_server_session_required",
+  "login_page_access": "public"
 }

@@ -1,0 +1,46 @@
+{
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "checks": [
+    {
+      "test": "Anonymous users reach only the login; six private resources return 401",
+      "passed": true
+    },
+    {
+      "test": "Wrong password, foreign Origin and oversized login body are rejected",
+      "passed": true
+    },
+    {
+      "test": "Real login opens the app; session cookie is Secure, HttpOnly and SameSite=Lax",
+      "passed": true
+    },
+    {
+      "test": "Administrative changes require a valid anti-CSRF token",
+      "passed": true
+    },
+    {
+      "test": "Admin creates a user in the real UI; credentials can be cleared; hashes never appear in user listings",
+      "passed": true
+    },
+    {
+      "test": "A separate user can enter with just username/password and cannot administer accounts",
+      "passed": true
+    },
+    {
+      "test": "Disabling and resetting a user revoke active sessions and invalidate the old password",
+      "passed": true
+    },
+    {
+      "test": "Changing a password and logging out revoke sessions on the server",
+      "passed": true
+    }
+  ],
+  "page_error_types": [],
+  "credentials_recorded": false,
+  "hosting_test_header_used": false,
+  "login_kind": "NEBO username/password with server cookie",
+  "synthetic_user_disabled_after_test": true,
+  "passed": true,
+  "deployed_commit_sha": "e95d509a2ce12e29753e063a131db2cdca51a117",
+  "hosting_audience": "public_login_with_native_auth",
+  "sites_test_header_used": false
+}
