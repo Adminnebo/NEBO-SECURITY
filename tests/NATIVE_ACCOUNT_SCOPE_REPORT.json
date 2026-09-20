@@ -1,0 +1,44 @@
+{
+  "base_url": "https://127.0.0.1:8789",
+  "backend": "Real local Wrangler Worker and D1",
+  "same_browser_context_for_account_switches": true,
+  "private_keys_exported": false,
+  "credentials_recorded": false,
+  "storage_boundary": "Account-scoped normal UI; not isolation from a person controlling this browser or OS",
+  "checks": [
+    {
+      "test": "Administrator retains the legacy identity database and a verified non-exportable key pair",
+      "passed": true
+    },
+    {
+      "test": "A changed account cookie forces the already-open app to reload before using the new account",
+      "passed": true
+    },
+    {
+      "test": "The fresh member sees neither the administrator identity nor administrator contacts",
+      "passed": true
+    },
+    {
+      "test": "The member creates a different verified non-exportable identity and a separate contact",
+      "passed": true
+    },
+    {
+      "test": "Returning to the administrator restores the original identity and only its original contact",
+      "passed": true
+    },
+    {
+      "test": "The real authenticated application and account link fit a 320px mobile viewport",
+      "passed": true
+    }
+  ],
+  "page_error_types": [],
+  "mobile_layout": {
+    "viewportWidth": 320,
+    "documentWidth": 320,
+    "overflowingNodes": []
+  },
+  "mobile_screenshot": "tests/ui-v11/app320.png",
+  "synthetic_user_disabled_after_test": true,
+  "administrator_logins": 2,
+  "passed": true
+}

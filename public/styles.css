@@ -796,4 +796,4 @@ html[data-theme="dark"] body[data-access="offline"] .access-status{background:#3
 .account-link svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
 body:not([data-access="granted"]) .account-link{display:none}
 @media(max-width:767px){.account-link{margin-left:auto}.install-shortcut{margin-left:0}.header-inner{gap:8px}}
-@media(max-width:380px){.header-inner{padding-left:14px;padding-right:14px;gap:6px}.header-inner .brand{max-width:124px}.header-inner .brand-logo{max-width:110px}}
+@media(max-width:380px){.header-inner{padding-left:14px;padding-right:14px;gap:6px}.header-inner .brand{max-width:86px}.header-inner .brand-logo{width:86px;max-width:86px}}
