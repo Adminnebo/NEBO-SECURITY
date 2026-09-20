@@ -21,7 +21,7 @@
     {
       "test": "Real browser recording with fake microphone adds a valid WAV without replacing attachments",
       "passed": true,
-      "recorded_bytes": 81964
+      "recorded_bytes": 114732
     },
     {
       "test": "Mixed attachment composer has no horizontal overflow at 390 light and 320 dark",
@@ -32,27 +32,35 @@
       ]
     },
     {
-      "test": "Eight mixed attachments produce one independently authenticated PNG/token/secret",
-      "passed": true,
-      "artwork_bytes": 8388628,
-      "token_bytes": 451,
-      "plaintext_bytes": 92111
+      "test": "Mobile cover customization is optional and returns to direct creation with automatic resolution",
+      "passed": true
     },
     {
-      "test": "Fresh offline recipient rejects wrong key, then downloads every exact original and whole exact ZIP",
+      "test": "Mobile direct creation emits an independently authenticated PNG with embedded token and separate secret",
+      "passed": true,
+      "artwork_bytes": 1581548,
+      "base_artwork_bytes": 1581085,
+      "token_bytes": 451,
+      "plaintext_bytes": 124880,
+      "embedded_token_copies": 1,
+      "wrapper_pixel_mismatches": 0
+    },
+    {
+      "test": "Fresh offline recipient uses only PNG and secret, rejects wrong key, then downloads every exact original and whole ZIP",
       "passed": true,
       "attachment_count": 8,
       "attachment_sha256": [
         "0191211980ee5d7116befc80d8e37f223e924a5c7f6d8d1c1fde74d95b086ead",
         "04a6d53f68b69a7c0792f18fe5253a0169c4156fc345e19af12fd3af78c58e52",
         "3f2882b246b0b0a462e8c08bfe458638b7097bdad25073d3e49e90f12ae14cae",
+        "6d8d8dd9b67473521b5b7d29c7af9ff98e773d4f6a49a31558e1319584605157",
         "852132ef92b1c39c3e876de57c2460dab4fddc88ec8697f262ec9d1510fcb6d6",
         "a2089d4accb5f5824f1ccb8b116bd2d2cfb204550d725d735aba8f35e3a7e356",
         "b2b6773335b4f3b80012c1175b238964f2bb345a57ed6ee521a6791e1e447712",
-        "c24ad007301b6e07855a3a6cc23f6fbe710c14a63cdde65d136dadd9ccefc464",
-        "fb7b651e1fd0e22b61916796f9836d34cfe960780113a671eb400d1bcf122fd8"
+        "c24ad007301b6e07855a3a6cc23f6fbe710c14a63cdde65d136dadd9ccefc464"
       ],
-      "zip_sha256": "6ac16be3bb049c5544ef87e7d776bafca59e1d6d6ffb19f8fbff3cd6708d57b3"
+      "zip_sha256": "61e39cf2bcecc2a2f8c0eb9afaf67bb7fee4029f846937b4a2ba74316d5d705e",
+      "external_token_uploaded": false
     },
     {
       "test": "Independent Python zipfile validates CRCs, unique safe member paths and exact original byte multiset",
@@ -65,7 +73,11 @@
       "passed": true
     },
     {
-      "test": "Single-file private sender/receiver still returns exact standalone original",
+      "test": "Single-file private PNG-only transport returns the exact standalone original",
+      "passed": true
+    },
+    {
+      "test": "Earlier private V2 base PNG plus separate token remains compatible offline",
       "passed": true
     },
     {
@@ -90,5 +102,5 @@
     "http://127.0.0.1:8774/assets/nebo-symbol.svg"
   ],
   "functional_network_attempts_after_cutoff": [],
-  "seconds": 49.86
+  "seconds": 67.391
 }

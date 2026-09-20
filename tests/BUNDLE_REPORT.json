@@ -107,5 +107,5 @@
   "maximum_archive_bytes": 20971520,
   "maximum_test_file_bytes": 20971035,
   "node": "v24.19.0",
-  "seconds": 1.052
+  "seconds": 0.64
 }

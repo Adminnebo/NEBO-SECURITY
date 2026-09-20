@@ -5,6 +5,12 @@ imagen visible es una portada elegida por el usuario: los datos cifrados se
 transportan dentro de los bits de sus canales RGB. Es un formato diferente de
 la permutación clásica ASTRA-MSG-V1, que permanece disponible sin cifrado.
 
+Los nuevos envíos incorporan el token cifrado en un bloque PNG `neBo`. La clave
+secreta sigue fuera de la imagen. La validación retira exactamente ese bloque
+para comprobar el hash autenticado del PNG base; también comprueba su CRC y
+rechaza tokens duplicados o discrepantes. El formato se documenta en
+[PORTABLE_PNG.md](PORTABLE_PNG.md).
+
 ## Modelo de amenaza
 
 Se busca proteger el contenido de un archivo frente a una persona que obtiene
@@ -45,6 +51,10 @@ usarse como si fuese una vista previa protegida del documento.
    validación de tamaños antes de asignar memoria, rechazo de formatos extraños
    y documentación versionada. Los informes describen lo ejecutado; no son una
    certificación ni una auditoría externa profesional.
+7. **Caché y contactos limitados.** La PWA solo almacena los recursos estáticos
+   enumerados de la aplicación, nunca los envíos ni sus secretos. La libreta
+   contiene nombres e identidades públicas verificadas, separada de la base
+   de identidades privadas. No constituye una sincronización o respaldo remoto.
 
 ## Límites que no desaparecen por añadir cifrado
 

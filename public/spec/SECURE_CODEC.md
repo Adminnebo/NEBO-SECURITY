@@ -9,6 +9,9 @@ y composición; se mide la diferencia real introducida.
 El receptor necesita el PNG, el token cifrado y una autorización criptográfica:
 la clave privada de recuperación, o su identidad local de destinatario.
 El token no incluye la clave necesaria para descifrarse.
+El token puede viajar integrado en un chunk privado `neBo` del propio PNG;
+en ese caso el receptor selecciona solamente la imagen y su clave o identidad.
+El envoltorio se especifica en `PORTABLE_PNG.md` y no cambia la criptografía V2.
 
 ## Seis protecciones implementadas
 
@@ -20,8 +23,10 @@ El token no incluye la clave necesaria para descifrarse.
    etiqueta de autenticación de 128 bits y cabecera completa como AAD.
 4. **Cifrado autenticado del token:** otra clave AES-256-GCM y otro IV aleatorio
    protegen los parámetros de extracción y el hash del PNG.
-5. **Integridad de toda la obra:** el hash SHA-256 del PNG completo está dentro
-   del token autenticado. Se detectan cambios incluso en píxeles sin carga útil.
+5. **Integridad de la obra base:** el hash SHA-256 del PNG base completo está
+   dentro del token autenticado. Se detectan cambios incluso en píxeles sin
+   carga útil. Si existe un chunk `neBo`, se elimina solo ese chunk para obtener
+   el PNG base; el token que contenía se autentica mediante AES-GCM.
 6. **Validación e identidad:** esquemas y tamaños estrictos, huellas verificadas
    para claves públicas, claves privadas locales no exportables y una
    reconstrucción completa de prueba antes de entregar cada resultado.
@@ -92,6 +97,7 @@ token se cifra con la segunda clave, `token_iv` y la AAD descrita. Las dos
 claves AES se crean como `CryptoKey` no exportables.
 
 El token completo se limita a 16 KiB. Su tamaño real se informa tras generarlo.
+Integrarlo en el PNG añade exactamente esos bytes más 12 bytes de cabecera/CRC.
 Es pequeño porque contiene parámetros para extraer ciphertext, no millones de
 asignaciones de la permutación anterior. El tamaño del PNG portador es el costo
 principal de transporte.
@@ -175,21 +181,33 @@ PSNR = 10 × log10(255² / MSE)
 Si MSE es cero, PSNR es infinito. Se reportan `psnr_db`, `max_channel_delta`
 y `bits_per_channel`; no se sustituye una medición por una promesa visual.
 
-La obra usa PNG RGB8, filtro de fila 0, un IDAT con zlib y bloques DEFLATE
-almacenados de hasta 65 535 bytes, y solamente IHDR/IDAT/IEND. Se escribe de
-forma explícita, sin compresión con pérdidas ni metadatos de carga útil.
+La obra base usa PNG RGB8, filtro de fila 0, un IDAT con zlib y solamente
+IHDR/IDAT/IEND. La compresión real sin pérdidas se obtiene mediante
+`CompressionStream('deflate')` cuando está disponible. Solo se utiliza si su
+resultado ocupa menos que DEFLATE almacenado; si no está disponible, falla o
+no reduce tamaño, se escriben bloques almacenados de hasta 65 535 bytes como
+en la versión anterior. El lector admite ambos. Los píxeles son idénticos en
+las dos representaciones; no se usa cuantización ni codificación con pérdidas.
+
+Si se solicita un PNG portátil, se añade un único chunk privado `neBo` antes
+de IEND con el token ya cifrado. Los bytes del archivo original cifrado siguen
+en los canales RGB; `neBo` contiene únicamente el token y nunca la clave secreta.
 
 ## Recuperación y comprobación
 
-1. Validar la cabecera y obtener las claves por el modo indicado.
-2. Autenticar y descifrar el cuerpo del token antes de usar sus parámetros.
-3. Validar dimensiones, capacidad y longitudes autenticadas.
-4. Comparar SHA-256 del PNG completo con el hash dentro del token.
-5. Analizar el PNG como bytes, sin canvas ni correcciones de color; verificar
+1. Validar el contenedor PNG y extraer el token integrado, si existe. Si también
+   se proporciona un token externo, exigir que coincida byte por byte.
+   Sin token integrado, sigue siendo válido el par antiguo PNG + token externo.
+2. Validar la cabecera del token y obtener las claves por el modo indicado.
+3. Autenticar y descifrar el cuerpo del token antes de usar sus parámetros.
+4. Validar dimensiones, capacidad y longitudes autenticadas.
+5. Comparar SHA-256 del PNG base completo, retirando solo `neBo` si existe,
+   con el hash dentro del token.
+6. Analizar el PNG como bytes, sin canvas ni correcciones de color; verificar
    sus CRC, formato, filtro y tamaño expandido, y extraer el ciphertext RGB.
-6. Autenticar y descifrar la trama del archivo con la clave y AAD del contenido.
-7. Validar los metadatos privados, extraer el archivo y comprobar su SHA-256.
-8. Entregar el archivo solamente tras completar todas las verificaciones.
+7. Autenticar y descifrar la trama del archivo con la clave y AAD del contenido.
+8. Validar los metadatos privados, extraer el archivo y comprobar su SHA-256.
+9. Entregar el archivo solamente tras completar todas las verificaciones.
 
 Cada codificación ejecuta esos pasos inversos y compara además todos los bytes
 con el archivo original antes de devolver la obra y el token. Las dos
@@ -206,9 +224,9 @@ habitual `{id,type:'progress'|'result'|'error',...}`.
 // Secreto nuevo por defecto; recipient selecciona el modo destinatario.
 {id,action:'encode',file:ArrayBuffer,name,mime,
  cover:{width,height,data:ArrayBuffer,channels:3|4},
- secret?:string|Uint8Array,recipient?:publicBundle}
+ secret?:string|Uint8Array,recipient?:publicBundle,embed_token?:boolean}
 
-{id,action:'decode',artwork:ArrayBuffer,token:ArrayBuffer|string,
+{id,action:'decode',artwork:ArrayBuffer,token?:ArrayBuffer|string,
  secret?:string|Uint8Array,privateKey?:CryptoKey,recipientPublic?:publicBundle}
 
 {id,action:'generate_identity'}
@@ -218,9 +236,22 @@ habitual `{id,type:'progress'|'result'|'error',...}`.
 También exporta `generateIdentity()`, `validatePublicBundle(bundle)`,
 `encodeSecure(input,callback)` y `decodeSecure(input,callback)` para importación
 como módulo. La importación desde una ventana no registra manejadores de worker.
+`estimateCiphertextBytes({file,name,mime})` devuelve síncronamente el tamaño
+exacto de la trama cifrada, sin leer el archivo. Acepta File/Blob, bytes o un
+objeto `{size:n}`. El cálculo incluye metadatos normalizados, prefijo de 4 bytes
+y etiqueta GCM de 16 bytes; un hash provisional de 64 caracteres tiene la misma
+longitud que el SHA-256 real.
 
 `generateIdentity` devuelve `{privateKey,publicBundle}`. Codificar devuelve
 `artwork`, `token`, `recovery_secret` solamente en modo secreto, los resultados
 de integridad y las medidas de calidad. Descifrar devuelve `file`, `name`,
 `mime`, `sha256` y `exact_file_recovery:true` cuando la autenticación termina.
 Ninguna función del motor hace peticiones de red.
+
+`embed_token` es falso por defecto para preservar la API anterior. Si es
+verdadero, `artwork` ya es el PNG portátil y `embedded_token:true`; `token`
+sigue devolviéndose como copia externa opcional. `artwork_sha256` y
+`artwork_bytes` describen el PNG realmente entregado. `base_artwork_sha256`
+y `base_artwork_bytes` describen la imagen normalizada autenticada por el token.
+`png_compression`, `uncompressed_png_bytes` y `png_savings_bytes` muestran la
+representación elegida, su cota almacenada y el ahorro medido.

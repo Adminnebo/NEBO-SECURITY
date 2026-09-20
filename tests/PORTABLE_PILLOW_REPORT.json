@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "reader": "Pillow",
+  "width": 512,
+  "height": 384,
+  "base_and_portable_rgb_identical": true,
+  "mismatching_pixels": 0,
+  "standard_png_crcs_verified": true,
+  "pixel_sha256": "5bd3f7bb7af0693a2d80075885f266961c5533a58d5fd2f4fb63f0e5c612c7f2"
+}

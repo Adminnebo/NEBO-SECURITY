@@ -21,38 +21,42 @@ funciones criptográficas proceden de Web Crypto.
 
 ## Primera prueba privada
 
-En el teléfono, la interfaz guía el envío en tres pasos: **Contenido → Portada →
-Compartir**. La barra inferior permite avanzar, volver y cambiar a **Abrir
-recibido**. Las opciones adicionales están plegadas. El enlace es el mismo en
-móvil y escritorio; no hace falta instalar una aplicación.
+La portada se ve desde la primera pantalla, en móvil y escritorio. Escribe un
+mensaje o añade adjuntos y pulsa **Crear imagen privada**. El texto del editor
+se incluye automáticamente. **Cambiar portada** abre la personalización opcional;
+el formato y la resolución se calculan automáticamente según el contenido.
 
 Si el navegador admite compartir archivos, aparece un botón para enviar el
-PNG y el token con el menú del dispositivo. La clave secreta queda fuera de
-esa selección. También siguen disponibles las descargas individuales.
+PNG con el menú del dispositivo. El token cifrado ya está integrado en ese PNG;
+la clave secreta queda fuera de esa selección. También puedes descargar el PNG
+y guardar una copia opcional del token por separado.
 
 1. Añade uno o varios archivos de cualquier tipo: fotos, PDF, audio, video u otros.
    También puedes añadir mensajes escritos, grabar notas de voz e incluir ubicaciones.
    Cada selección se agrega al envío; puedes quitar elementos por separado.
-2. Elige modo privado, una portada sugerida o propia, y la resolución. La
-   portada queda visible: usa una imagen que puedas compartir.
+2. Puedes cambiar la portada sugerida por otra o subir una propia. La portada
+   queda visible: usa una imagen que puedas compartir. La resolución manual
+   permite 2K, 4K o hasta 4096 px; el ajuste automático suele producir archivos menores.
 3. Crea el envío. Se cifra el archivo y se verifica su recuperación antes de
-   habilitar la descarga del PNG y del token cifrado.
+   habilitar la descarga del PNG con su token cifrado integrado.
 4. Guarda la clave secreta generada. No está dentro del PNG ni del token.
    Compártela por un canal separado y protegido. Si la pierdes, no existe una
    clave maestra del servidor que permita recuperar el archivo.
-5. Envía PNG + token junto con el enlace del receptor. En WhatsApp, adjunta el
+5. Envía el PNG junto con el enlace del receptor. En WhatsApp, adjunta el
    PNG como documento/archivo, sin recomprimir.
-6. El receptor selecciona ambos archivos y aporta la clave secreta. Puede
-   reconstruir sin red después de cargar la página y los motores.
+6. El receptor selecciona el PNG, ve su portada inmediatamente y aporta la
+   clave secreta. No necesita el original ni descargar un token adicional.
+   Para un envío anterior, abre **Token separado de un envío anterior**.
 
 ## Varios elementos en una sola imagen
 
 Un envío admite hasta **32 elementos y 20 MiB en total**, incluido el contenedor.
 La capacidad de la portada también depende de su resolución; la interfaz indica
-si hace falta una imagen mayor. Todos los elementos viajan dentro de **un PNG,
-un token y una clave secreta** en el modo privado habitual.
+si hace falta una imagen mayor. Todos los elementos y el token cifrado viajan
+dentro de **un PNG**; la clave secreta se comparte aparte en el modo privado habitual.
 
-El receptor ve una lista con cada elemento recuperado. Puede descargar cada uno,
+El receptor ve primero los mensajes escritos, después fotos, audio y otros
+elementos. Puede descargar cada uno,
 reproducir audios o guardar todo en un ZIP. Los bytes originales se conservan;
 los elementos con el mismo nombre tienen rutas independientes dentro del ZIP.
 Los nombres, tipos, ubicaciones y el manifiesto se cifran junto al contenido.
@@ -71,6 +75,11 @@ El receptor crea una identidad en su navegador y exporta solo su clave pública.
 El emisor la importa y verifica su huella por otro canal. La clave privada es
 una CryptoKey no exportable guardada en IndexedDB y no viaja en el paquete.
 
+Después de verificar la huella puedes guardar hasta 50 contactos con nombre.
+La libreta guarda únicamente identidades públicas en este navegador. Elegir
+un contacto permite cifrar otro envío para él sin importar su archivo de nuevo.
+Eliminar un contacto no elimina ninguna identidad privada.
+
 No hay respaldo exportable de esa identidad privada. Borrar los datos del
 sitio o perder el perfil puede impedir abrir mensajes dirigidos a ella. Para
 la primera prueba portable, usa el modo de clave secreta guardada aparte.
@@ -81,7 +90,12 @@ mismo origen o un equipo comprometido puede usar la clave mientras está abierta
 
 ASTRA-SECURE-V2 cifra el archivo y sus metadatos con AES-256-GCM. Los datos
 cifrados se guardan dentro de los bits menos significativos de los canales RGB
-de la portada. El token está cifrado y autentica los parámetros y el PNG completo.
+de la portada. El token está cifrado y autentica los parámetros y el PNG base
+completo. El PNG portátil añade el token en un bloque privado `neBo`; quitar ese
+bloque recupera exactamente el PNG base autenticado, evitando un hash circular.
+El decodificador comprueba CRC, cifrado autenticado y hashes antes de mostrar
+el contenido. La [especificación portátil](public/spec/PORTABLE_PNG.md) explica
+cómo implementarlo independientemente y abrir también los pares anteriores.
 
 El modo privado **no es una permutación de los píxeles del documento legible**.
 Usa una portada pública como imagen portadora de información cifrada. El modo
@@ -95,12 +109,33 @@ generadas previamente con imagegen; no hay un servicio de IA en la web que
 reciba las imágenes que subes.
 
 Archivo máximo: 20 MiB. La capacidad depende de dimensiones y bits de carga.
-En teléfonos conviene empezar con archivos pequeños. El PNG sin pérdidas puede
-pesar mucho más que el original. La aplicación muestra el tamaño real del token.
+En teléfonos conviene empezar con archivos pequeños. El PNG usa compresión
+DEFLATE real sin pérdida, con fallback compatible, pero puede pesar más que
+el original. Antes de crear se muestra un límite superior de tamaño; después,
+el tamaño real del PNG. El token cifrado suele ocupar unos KB y puede descargarse
+para consultar su tamaño exacto. No se comprimen con pérdida los adjuntos.
+
+## Instalar y recuperar sin conexión
+
+En **Ayuda → Instalar aplicación**, usa el instalador del navegador cuando esté
+disponible. En Safari iOS: Compartir → Añadir a pantalla de inicio. También
+puedes usar la web sin instalarla. Espera el estado **Aplicación guardada**
+en Ayuda antes de desconectarte por primera vez.
+
+La caché conserva solo los 20 recursos estáticos de la aplicación. No guarda
+adjuntos, PNG de envíos, tokens ni claves secretas. Se verificó el arranque en
+un proceso de navegador nuevo y sin red, seguido de recuperación exacta.
+Las actualizaciones esperan a que cierres las pestañas de NEBO; no interrumpen
+una conversión activa. La instalación y la conservación del almacenamiento
+dependen del navegador. [Detalles de PWA y contactos](public/spec/PWA_AND_CONTACTS.md).
 
 ## Implementación y pruebas
 
 - `public/secure-worker.js`: cifrado, transporte RGB y recuperación V2.
+- `public/portable-png.js`: integración y extracción del token cifrado `neBo`.
+- `public/cover-planner.js`: capacidad y dimensiones automáticas sin cambiar adjuntos.
+- `public/contact-store.js`: libreta local de identidades públicas verificadas.
+- `public/sw.js`, `public/install.js`: caché estática, instalación y estado offline.
 - `public/identity-store.js`: identidad privada local y exportación pública.
 - `public/codec-worker.js`: compatibilidad y permutación clásica.
 - `public/spec/SECURE_CODEC.md`: especificación interoperable V2.
@@ -154,10 +189,19 @@ se pueden repetir en otra terminal:
 ```powershell
 python -m pip install -r tests/secure_audit_requirements.txt
 python tests/secure_audit_core.py --base-url http://127.0.0.1:8770
-python tests/secure_audit_ui.py --base-url http://127.0.0.1:8770
-python tests/mobile_ux_test.py --base-url http://127.0.0.1:8770 --label local
+node tests/test_cover_planner.mjs
+node tests/test_portable_png.mjs
+python tests/verify_portable_png.py
+python tests/v8_userflow_test.py --base-url http://127.0.0.1:8770
+python tests/multi_message_test.py --base-url http://127.0.0.1:8770
+python tests/pwa_contacts_test.py --base-url http://127.0.0.1:8770
+python tests/recipient_race_test.py --base-url http://127.0.0.1:8770
 ```
 
 Los scripts usan Microsoft Edge en Windows. `MOBILE_RELEASE.md` explica el
 resultado de la interfaz móvil y el aviso CSP observado en el alojamiento
-público. Los informes conservan los resultados reales, incluidos los avisos.
+público. Los informes antiguos conservan los resultados de sus versiones;
+`tests/V8_USERFLOW_REPORT.json`, `tests/PWA_CONTACTS_REPORT.json` y
+`tests/PORTABLE_CODEC_REPORT.json` documentan las pruebas de esta actualización.
+Estas pruebas usan navegadores de escritorio y tamaños móviles emulados;
+no equivalen a una prueba en teléfonos físicos o a una auditoría externa.

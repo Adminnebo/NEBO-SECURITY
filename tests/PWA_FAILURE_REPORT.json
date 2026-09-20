@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "essential_asset_failure": 503,
+  "partial_cache_entries": 0,
+  "worker_not_activated": true,
+  "previous_and_unrelated_caches_preserved": true
+}

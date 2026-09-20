@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "base_url": "http://127.0.0.1:8774",
+  "checks": [
+    {
+      "test": "Delayed identity import blocks encoding and confirmation while allowing another saved contact",
+      "passed": true
+    },
+    {
+      "test": "Selecting saved B supersedes the pending A import and confirms only B",
+      "passed": true
+    },
+    {
+      "test": "Late completion of A cannot overwrite B or its verified state",
+      "passed": true
+    },
+    {
+      "test": "Generated portable PNG is bound to B, decrypts exact bytes for B and rejects A",
+      "passed": true,
+      "artwork_bytes": 1523442
+    }
+  ],
+  "page_errors": [],
+  "synthetic_identities": true,
+  "private_keys_exported": false,
+  "controlled_File_text_delay": true,
+  "seconds": 24.469
+}

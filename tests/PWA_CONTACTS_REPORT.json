@@ -1,0 +1,82 @@
+{
+  "status": "PASS",
+  "base_url": "http://127.0.0.1:8774",
+  "checks": [
+    {
+      "test": "Validated public recipient saves and upserts by fingerprint while preserving creation time",
+      "passed": true
+    },
+    {
+      "test": "Alias bounds count Unicode code points and reject empty, oversized or control-containing names",
+      "passed": true
+    },
+    {
+      "test": "Forged fingerprints, private-key fields and invalid identifiers are rejected",
+      "passed": true
+    },
+    {
+      "test": "Concurrent writes enforce the 50-contact cap and still allow existing-contact updates",
+      "passed": true
+    },
+    {
+      "test": "IndexedDB contains only names, timestamps and validated public bundles",
+      "passed": true
+    },
+    {
+      "test": "Contact removal and replacement leave the private identity database unchanged",
+      "passed": true
+    },
+    {
+      "test": "Essential static application assets are precached; cache contains no transfer inputs",
+      "passed": true,
+      "cached_assets": 20
+    },
+    {
+      "test": "Full browser restart opens app and both codecs offline from cached assets",
+      "passed": true
+    },
+    {
+      "test": "Public contacts and unchanged nonextractable private identity survive a cold offline restart",
+      "passed": true
+    },
+    {
+      "test": "Single portable PNG recovers exact secret-mode and recipient-mode content after cold offline launch",
+      "passed": true
+    },
+    {
+      "test": "Classic PNG plus token recovers exact original after cold offline browser launch",
+      "passed": true
+    },
+    {
+      "test": "Recovery operations add no artwork, tokens, secrets or files to the application cache",
+      "passed": true
+    }
+  ],
+  "page_errors": [],
+  "real_browser_restart": true,
+  "private_test_profile_deleted": true,
+  "browser_installability_errors": [],
+  "cached_urls": [
+    "http://127.0.0.1:8774/index.html",
+    "http://127.0.0.1:8774/app.js?v=8",
+    "http://127.0.0.1:8774/theme.js?v=8",
+    "http://127.0.0.1:8774/styles.css?v=8",
+    "http://127.0.0.1:8774/codec-worker.js",
+    "http://127.0.0.1:8774/secure-worker.js",
+    "http://127.0.0.1:8774/portable-png.js",
+    "http://127.0.0.1:8774/identity-store.js",
+    "http://127.0.0.1:8774/bundle.js",
+    "http://127.0.0.1:8774/contact-store.js",
+    "http://127.0.0.1:8774/install.js",
+    "http://127.0.0.1:8774/cover-planner.js",
+    "http://127.0.0.1:8774/manifest.webmanifest",
+    "http://127.0.0.1:8774/assets/nebo-logo-original.png",
+    "http://127.0.0.1:8774/assets/nebo-symbol.svg",
+    "http://127.0.0.1:8774/assets/mountain.png",
+    "http://127.0.0.1:8774/assets/coast.png",
+    "http://127.0.0.1:8774/assets/aurora.png",
+    "http://127.0.0.1:8774/assets/nebula.png",
+    "http://127.0.0.1:8774/assets/documento-ejemplo.pdf"
+  ],
+  "seconds": 20.14
+}

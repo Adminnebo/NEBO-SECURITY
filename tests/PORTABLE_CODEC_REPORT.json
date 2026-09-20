@@ -1,0 +1,100 @@
+{
+  "status": "PASS",
+  "checks": 22,
+  "results": [
+    {
+      "name": "one_private_ancillary_token_chunk_exact_pack_unpack",
+      "pass": true
+    },
+    {
+      "name": "png_and_secret_only_exact_file_recovery",
+      "pass": true
+    },
+    {
+      "name": "matching_external_token_copy_accepted",
+      "pass": true
+    },
+    {
+      "name": "delivered_artifact_hash_separate_from_authenticated_base_hash",
+      "pass": true
+    },
+    {
+      "name": "exact_frame_estimator_unicode_and_file_like_without_read",
+      "pass": true
+    },
+    {
+      "name": "actual_lossless_deflate_smaller_than_stored_upper_bound",
+      "pass": true
+    },
+    {
+      "name": "embedded_token_contains_no_recovery_secret_name_or_original_hash",
+      "pass": true
+    },
+    {
+      "name": "wrong_or_missing_secret_rejected",
+      "pass": true
+    },
+    {
+      "name": "external_internal_token_byte_disagreement_rejected",
+      "pass": true
+    },
+    {
+      "name": "token_chunk_corruption_detected_before_decryption",
+      "pass": true
+    },
+    {
+      "name": "invalid_utf8_even_with_repaired_crc_rejected",
+      "pass": true
+    },
+    {
+      "name": "edited_token_with_valid_png_crc_fails_aead",
+      "pass": true
+    },
+    {
+      "name": "replacement_valid_token_bound_to_other_base_png_rejected",
+      "pass": true
+    },
+    {
+      "name": "duplicate_or_nested_embedded_token_rejected",
+      "pass": true
+    },
+    {
+      "name": "removal_requires_external_token_legacy_pair_remains_valid",
+      "pass": true
+    },
+    {
+      "name": "legacy_base_png_returned_byte_identically_without_token",
+      "pass": true
+    },
+    {
+      "name": "token_quota_truncation_and_declared_length_overflow_rejected",
+      "pass": true
+    },
+    {
+      "name": "unknown_chunks_and_plaintext_secret_token_fields_rejected",
+      "pass": true
+    },
+    {
+      "name": "changed_base_png_rejected_even_with_repaired_crc",
+      "pass": true
+    },
+    {
+      "name": "stored_deflate_fallback_and_old_external_pair_compatible",
+      "pass": true
+    },
+    {
+      "name": "recipient_identity_mode_png_only_roundtrip",
+      "pass": true
+    },
+    {
+      "name": "independent_node_zlib_reads_compressed_scanlines",
+      "pass": true
+    }
+  ],
+  "portable_bytes": 15636,
+  "base_png_bytes": 15177,
+  "token_bytes": 447,
+  "stored_png_upper_bound": 590321,
+  "compression": "deflate",
+  "seconds": 0.265
+}

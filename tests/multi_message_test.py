@@ -14,6 +14,7 @@ import time
 import traceback
 import wave
 import zipfile
+import zlib
 
 from PIL import Image
 from playwright.sync_api import sync_playwright, expect
@@ -83,9 +84,52 @@ def supplied_fixtures():
             upload('audio.wav', 'audio/wav', audio.getvalue())]
 
 
-def set_receiver(page, art, token, secret=None):
+def unpack_portable_png(art):
+    """Independent strict wrapper parser; the existing crypto oracle stays unchanged."""
+    assert art[:8] == b'\x89PNG\r\n\x1a\n'
+    offset = 8
+    base = bytearray(art[:8])
+    token = None
+    types = []
+    while offset < len(art):
+        assert offset + 12 <= len(art), 'Truncated PNG chunk'
+        size = struct.unpack_from('>I', art, offset)[0]
+        end = offset + size + 12
+        assert end <= len(art), 'Truncated PNG payload'
+        kind = art[offset + 4:offset + 8]
+        data = art[offset + 8:offset + 8 + size]
+        crc = struct.unpack_from('>I', art, offset + 8 + size)[0]
+        assert zlib.crc32(kind + data) & 0xffffffff == crc, 'Invalid PNG CRC'
+        types.append(kind)
+        if kind == b'neBo':
+            assert token is None and 0 < size <= 16384, 'Duplicate or oversized embedded token'
+            token = data
+            assert json.loads(data.decode('utf-8'))['format'] == 'ASTRA-SECURE-V2'
+        else:
+            base.extend(art[offset:end])
+        offset = end
+    assert types in ([b'IHDR', b'IDAT', b'IEND'], [b'IHDR', b'IDAT', b'neBo', b'IEND'])
+    return bytes(base), token
+
+
+def download_token_backup(page):
+    backup = page.locator('details.token-backup')
+    assert not backup.evaluate('(element) => element.open'), 'Private token backup should be collapsed'
+    backup.locator('summary').click()
+    return download(page, '#downloadToken')[0]
+
+
+def set_receiver(page, art, token=None, secret=None):
     page.locator('#receivedArt').set_input_files(upload('obra.png', 'image/png', art))
-    page.locator('#receivedToken').set_input_files(upload('token.json', 'application/json', token))
+    expect(page.locator('#receivedPreview')).to_be_visible()
+    if token is None:
+        expect(page.locator('#embeddedTokenStatus')).to_contain_text('Token integrado detectado')
+        assert page.locator('#receivedToken').evaluate('(input) => input.files.length') == 0
+        assert not page.locator('#legacyTokenOptions').evaluate('(details) => details.open')
+    else:
+        if not page.locator('#legacyTokenOptions').evaluate('(details) => details.open'):
+            page.locator('#legacyTokenOptions > summary').click()
+        page.locator('#receivedToken').set_input_files(upload('token.json', 'application/json', token))
     if secret is not None:
         page.locator('#receivedSecret').fill(secret)
 
@@ -175,7 +219,8 @@ def run(args, report):
         # Capture generated originals before encoding, independently of the bundle parser.
         created = sender.evaluate("""async () => await Promise.all(window.__auditCreatedFiles.map(async f => ({name:f.name,type:f.type,data:Array.from(new Uint8Array(await f.arrayBuffer()))})))""")
         text_files = [f for f in created if bytes(f['data']) == message.encode('utf-8')]
-        assert len(text_files) == 1
+        # Live size estimation may create temporary File objects for the same draft.
+        assert text_files
         location_files = [f for f in created if 'geo' in f['type'] or 'ubicaci' in f['name'].lower() or 'location' in f['name'].lower()]
         assert location_files, 'Manual location original must be captured before encoding'
         location_original = bytes(location_files[0]['data'])
@@ -192,13 +237,32 @@ def run(args, report):
             shot = ROOT / 'tests' / f'multi-{width}-{theme}.png'
             sender.screenshot(path=str(shot), full_page=True)
         passed('Mixed attachment composer has no horizontal overflow at 390 light and 320 dark', screenshots=['tests/multi-390-light.png', 'tests/multi-320-dark.png'])
-        sender.set_viewport_size({'width':1440, 'height':1050})
-        sender.locator('#encodeButton').click(); wait_result(sender, 'sender')
-        art, _ = download(sender, '#downloadArt'); token, _ = download(sender, '#downloadToken')
+        expect(sender.locator('body')).to_have_attribute('data-mobile-step', '0')
+        expect(sender.locator('#liveCoverImage')).to_be_visible()
+        expect(sender.locator('#mobileAction')).to_contain_text('Crear imagen privada')
+        sender.locator('#editCoverButton').click()
+        expect(sender.locator('body')).to_have_attribute('data-mobile-step', '1')
+        expect(sender.locator('#coverResolution')).to_have_value('auto')
+        sender.locator('#mobileBack').click()
+        expect(sender.locator('body')).to_have_attribute('data-mobile-step', '0')
+        passed('Mobile cover customization is optional and returns to direct creation with automatic resolution')
+        sender.locator('#mobileAction').click(); wait_result(sender, 'sender')
+        expect(sender.locator('body')).to_have_attribute('data-mobile-step', '2')
+        art, _ = download(sender, '#downloadArt')
+        base_art, embedded_token = unpack_portable_png(art)
+        assert embedded_token is not None
+        token = download_token_backup(sender)
+        assert token == embedded_token, 'Optional token backup must match its embedded copy exactly'
         secret = sender.locator('#recoverySecret').input_value()
-        plaintext, meta, _, _ = oracle(art, token, secret=secret)
+        plaintext, meta, _, _ = oracle(base_art, embedded_token, secret=secret)
         assert len(secret) == 43 and plaintext[:4] == b'PK\x03\x04'
-        passed('Eight mixed attachments produce one independently authenticated PNG/token/secret', artwork_bytes=len(art), token_bytes=len(token), plaintext_bytes=len(plaintext))
+        assert secret.encode('ascii') not in art and secret.encode('ascii') not in token
+        assert message.encode('utf-8') not in token
+        with Image.open(io.BytesIO(art)) as portable_image, Image.open(io.BytesIO(base_art)) as base_image:
+            assert portable_image.mode == base_image.mode == 'RGB'
+            assert portable_image.size == base_image.size
+            assert portable_image.tobytes() == base_image.tobytes()
+        passed('Mobile direct creation emits an independently authenticated PNG with embedded token and separate secret', artwork_bytes=len(art), base_artwork_bytes=len(base_art), token_bytes=len(token), plaintext_bytes=len(plaintext), embedded_token_copies=1, wrapper_pixel_mismatches=0)
 
         # Receiver gets no source files, sender state, or network after static load.
         rc = browser.new_context(accept_downloads=True, viewport={'width':1440,'height':1050})
@@ -209,7 +273,7 @@ def run(args, report):
         wait_ready(receiver)
         rc.route('**/*', lambda route: (report['network_attempts_after_cutoff'].append(route.request.url), route.abort())[1])
         rc.set_offline(True)
-        receiver.locator('#receiverTab').click(); set_receiver(receiver, art, token, 'A' * 43)
+        receiver.locator('#receiverTab').click(); set_receiver(receiver, art, secret='A' * 43)
         receiver.locator('#decodeButton').click()
         receiver.locator('#receiverError:not(.hidden)').wait_for(timeout=60000)
         assert receiver.locator('#receiverResult').evaluate("e => e.classList.contains('hidden')")
@@ -224,7 +288,7 @@ def run(args, report):
         restored_zip, zip_name = download(receiver, '#downloadRestored')
         assert restored_zip == plaintext and zip_name.lower().endswith('.zip')
         assert receiver.locator('#restoredPreview iframe,#restoredPreview object,#restoredPreview embed').count() == 0
-        passed('Fresh offline recipient rejects wrong key, then downloads every exact original and whole exact ZIP', attachment_count=len(actual), attachment_sha256=sorted(map(sha, actual)), zip_sha256=sha(restored_zip))
+        passed('Fresh offline recipient uses only PNG and secret, rejects wrong key, then downloads every exact original and whole ZIP', attachment_count=len(actual), attachment_sha256=sorted(map(sha, actual)), zip_sha256=sha(restored_zip), external_token_uploaded=False)
         with zipfile.ZipFile(io.BytesIO(restored_zip)) as zf:
             assert zf.testzip() is None
             names = zf.namelist(); assert len(names) == len(set(names))
@@ -251,21 +315,31 @@ def run(args, report):
         passed('Recovered mixed attachment cards fit 390 light and 320 dark without horizontal overflow')
 
         # Fresh single-file operation must remain a direct original, not a ZIP.
+        sender.set_viewport_size({'width':1440, 'height':1050})
         while rows.count():
             rows.last.locator('.remove-attachment').click()
         sender.locator('#sourceFile').set_input_files(fixtures[0]); expect(rows).to_have_count(1)
         old = sender.locator('#downloadArt').get_attribute('href')
         sender.locator('#encodeButton').click(); wait_result(sender, 'sender', old)
-        single_art, _ = download(sender, '#downloadArt'); single_token, _ = download(sender, '#downloadToken')
+        single_art, _ = download(sender, '#downloadArt')
+        single_base, single_token = unpack_portable_png(single_art)
+        assert single_token is not None
         single_secret = sender.locator('#recoverySecret').input_value()
-        single, _, _, _ = oracle(single_art, single_token, secret=single_secret)
+        single, _, _, _ = oracle(single_base, single_token, secret=single_secret)
         assert single == fixtures[0]['buffer']
         previous = receiver.locator('#downloadRestored').get_attribute('href')
-        set_receiver(receiver, single_art, single_token, single_secret)
+        set_receiver(receiver, single_art, secret=single_secret)
         receiver.locator('#decodeButton').click(); wait_result(receiver, 'receiver', previous)
         single_bytes, single_name = download(receiver, '#downloadRestored')
         assert single_bytes == fixtures[0]['buffer'] and single_name == fixtures[0]['name']
-        passed('Single-file private sender/receiver still returns exact standalone original')
+        passed('Single-file private PNG-only transport returns the exact standalone original')
+        # V2 before the embedded wrapper used the same base PNG plus separate token.
+        previous = receiver.locator('#downloadRestored').get_attribute('href')
+        set_receiver(receiver, single_base, single_token, single_secret)
+        receiver.locator('#decodeButton').click(); wait_result(receiver, 'receiver', previous)
+        unwrapped_bytes, _ = download(receiver, '#downloadRestored')
+        assert unwrapped_bytes == fixtures[0]['buffer']
+        passed('Earlier private V2 base PNG plus separate token remains compatible offline')
         legacy = ROOT / 'tests/fixtures/png_alpha'
         previous = receiver.locator('#downloadRestored').get_attribute('href')
         set_receiver(receiver, (legacy / 'artwork.png').read_bytes(), (legacy / 'token.json').read_bytes())

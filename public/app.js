@@ -1,17 +1,22 @@
 'use strict';
 import { loadIdentity, createIdentity, exportPublicIdentity, clearIdentity, loadRecipientBundle, fingerprintPublicBundle } from './identity-store.js';
-import { createBundle, readBundle, isBundleMime, estimateBundleSize, MAX_BUNDLE_ITEMS } from './bundle.js';
+import { createBundle, readBundle, isBundleMime, estimateBundleSize, MAX_BUNDLE_ITEMS, BUNDLE_MIME } from './bundle.js';
+import { estimateCiphertextBytes } from './secure-worker.js';
+import { unpackPortablePNG } from './portable-png.js';
+import { planCover } from './cover-planner.js';
+import { listContacts, saveContact, removeContact } from './contact-store.js';
+import { initInstallUI } from './install.js';
 
 const $ = id => document.getElementById(id);
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const state = { file: null, items: [], nextItemId: 1, receivedCount: 1, receivedBundle: false, locating: false, locationRequest: 0, locationFix: null, urls: [], workers: { classic: null, secure: null }, workerReady: new Set(), nextId: 1,
   pending: null, busy: false, activeMode: 'sender', recording: null,
-  preparingMicrophone: false, receivedArt: null, receivedToken: null, target: null, taskSerial: 0,
+  preparingMicrophone: false, receivedArt: null, receivedToken: null, embeddedToken: null, inspectingArt: false, receiveSerial: 0, receivedPreviewURL: null, target: null, taskSerial: 0,
   cover: 'mountain', coverFile: null, coverURL: null, identity: null, recipient: null,
-  tokenFormat: null, tokenMode: null, secretURL: null, coverVersion: 0, mobileStep: 0, shareFiles: null };
+  tokenFormat: null, tokenMode: null, secretURL: null, coverVersion: 0, mobileStep: 0, shareFiles: null, contacts: [], contactBusy: false, recipientSerial: 0, recipientLoading: false };
 const mobileScreen = window.matchMedia('(max-width: 760px)');
 const el = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
-const sharePackageButton = el('button', 'button secondary wide hidden', 'Compartir PNG y token ↗');
+const sharePackageButton = el('button', 'button secondary wide hidden', 'Compartir imagen ↗');
 sharePackageButton.id = 'sharePackage'; sharePackageButton.type = 'button';
 document.querySelector('.download-pair').after(sharePackageButton);
 const formatBytes = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(2)} MB`;
@@ -69,15 +74,15 @@ function syncMobile() {
   else if (receiving) {
     button.textContent = recovered ? state.receivedBundle ? 'Descargar todo en ZIP ↓' : 'Guardar archivo original ↓' : 'Abrir y verificar →';
     button.disabled = !recovered && $('decodeButton').disabled;
-    hint.textContent = recovered ? `${state.receivedCount} elemento${state.receivedCount === 1 ? '' : 's'} recuperado${state.receivedCount === 1 ? '' : 's'} y verificado${state.receivedCount === 1 ? '' : 's'}.` : !state.receivedArt || !state.receivedToken ? 'Selecciona el PNG y el token que recibiste.' : state.tokenMode === 'secret' ? 'Introduce también la clave que recibiste aparte.' : 'Todo se reconstruye en tu navegador.';
+    hint.textContent = recovered ? `${state.receivedCount} elemento${state.receivedCount === 1 ? '' : 's'} recuperado${state.receivedCount === 1 ? '' : 's'} y verificado${state.receivedCount === 1 ? '' : 's'}.` : state.inspectingArt ? 'Leyendo tu imagen…' : !state.receivedArt ? 'Selecciona la imagen PNG que recibiste.' : !state.embeddedToken && !state.receivedToken ? 'Este envío anterior necesita su token separado.' : state.tokenMode === 'secret' ? 'Pega la clave que recibiste por separado.' : 'Tu identidad abrirá el envío en este navegador.';
   } else if (state.recording) { button.textContent = 'Terminar grabación ■'; hint.textContent = 'Tu nota de voz se está grabando.'; }
   else if (state.mobileStep === 0) {
-    button.textContent = 'Elegir portada →'; button.disabled = !state.file || state.preparingMicrophone;
+    button.textContent = $('encodingMode').value === 'private' ? 'Crear imagen privada →' : 'Crear envío sin cifrado →'; button.disabled = $('encodeButton').disabled;
     hint.textContent = state.file ? `${state.items.length} elemento${state.items.length === 1 ? '' : 's'} · ${formatBytes(totalAttachmentBytes())}` : 'Añade archivos, texto, voz o ubicación.';
   } else if (state.mobileStep === 1) {
     button.textContent = $('encodingMode').value === 'private' ? 'Crear envío privado →' : 'Crear envío sin cifrado →'; button.disabled = $('encodeButton').disabled;
     hint.textContent = button.disabled ? 'Confirma la identidad destinataria para continuar.' : $('encodingMode').value === 'private' ? 'Cifrado y verificado antes de compartir.' : 'El modo clásico no cifra el contenido.';
-  } else { button.textContent = 'Editar mi envío'; hint.textContent = 'Guarda la obra, el token y tu clave por separado.'; }
+  } else { button.textContent = 'Editar mi envío'; hint.textContent = $('encodingMode').value === 'private' ? 'Comparte la imagen. Guarda tu clave por separado.' : 'Comparte la obra y su token. Este modo no cifra.'; }
   $('mobileEditReceived').classList.toggle('hidden', !recovered);
 }
 function setMobileStep(step) {
@@ -100,9 +105,14 @@ function setMode(mode) {
 function updateButtons() {
   const privateMode = $('encodingMode').value === 'private';
   const needsRecipient = privateMode && document.querySelector('input[name=accessMode]:checked').value === 'recipient';
-  $('encodeButton').disabled = state.busy || !state.file || Boolean(state.recording) || state.preparingMicrophone || needsRecipient && (!state.recipient || !$('recipientVerified').checked);
-  $('decodeButton').disabled = state.busy || !state.receivedArt || !state.receivedToken;
-  for (const id of ['sourceFile', 'receivedArt', 'receivedToken', 'recordButton', 'demoButton', 'textButton', 'useText', 'encodingMode', 'coverFile', 'coverFormat', 'coverResolution', 'coverStyle', 'recipientFile', 'recipientVerified', 'createIdentity', 'clearIdentity', 'locationButton', 'useCurrentLocation', 'addLocation', 'locationLabel', 'locationLatitude', 'locationLongitude', 'clearAttachments']) $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  $('encodeButton').disabled = state.busy || state.contactBusy || (!state.file && !$('textInput').value.trim()) || Boolean(state.recording) || state.preparingMicrophone || needsRecipient && (state.recipientLoading || !state.recipient || !$('recipientVerified').checked);
+  $('decodeButton').disabled = state.busy || state.inspectingArt || !state.receivedArt || (!state.embeddedToken && !state.receivedToken);
+  for (const id of ['sourceFile', 'photoFile', 'receivedArt', 'receivedToken', 'recordButton', 'demoButton', 'textButton', 'useText', 'encodingMode', 'coverFile', 'coverFormat', 'coverResolution', 'coverStyle', 'recipientFile', 'recipientVerified', 'createIdentity', 'clearIdentity', 'locationButton', 'useCurrentLocation', 'addLocation', 'locationLabel', 'locationLatitude', 'locationLongitude', 'clearAttachments', 'editCoverButton', 'savedContact', 'saveContact', 'removeContact', 'contactName']) $(id).disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
+  $('saveContact').disabled ||= state.contactBusy || !state.recipient || !$('recipientVerified').checked;
+  $('removeContact').disabled ||= state.contactBusy || !$('savedContact').value;
+  for (const id of ['savedContact', 'recipientFile', 'contactName', 'recipientVerified']) $(id).disabled ||= state.contactBusy;
+  $('recipientVerified').disabled ||= state.recipientLoading;
+  $('textInput').disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone;
   $('useCurrentLocation').disabled ||= state.locating;
   document.querySelectorAll('.remove-attachment,.attachment-cover').forEach(node => { node.disabled = state.busy || Boolean(state.recording) || state.preparingMicrophone; });
   document.querySelectorAll('.cover-choice,input[name=accessMode]').forEach(node => { node.disabled = state.busy; });
@@ -175,6 +185,17 @@ function cancelTask() {
   endTask(mode, true); toast('Operación cancelada.');
 }
 function totalAttachmentBytes() { return state.items.reduce((sum, item) => sum + item.file.size, 0); }
+function draftMessage() {
+  const text = $('textInput').value;
+  if (!text.trim()) return null;
+  const count = state.items.filter(item => item.kind === 'text').length;
+  return { file: new File([text], count ? `mensaje-nebo-${count + 1}.txt` : 'mensaje-nebo.txt', { type: 'text/plain' }), kind: 'text' };
+}
+function addDraftMessage() {
+  const item = draftMessage(); if (!item) return true;
+  if (!selectFile(item.file, item.kind)) return false;
+  $('textInput').value = ''; describeCover(); updateButtons(); return true;
+}
 function needsBundle(items = state.items) { return items.length > 1 || items.some(item => item.kind === 'location' || item.file.size === 0); }
 function itemKindLabel(item) {
   return item.kind === 'location' ? 'UBICACIÓN' : item.kind === 'text' ? 'MENSAJE' : item.kind === 'voice' || item.file.type.startsWith('audio/') ? 'AUDIO' : item.file.type.startsWith('image/') ? 'FOTO' : item.file.type.startsWith('video/') ? 'VIDEO' : item.file.type === 'application/pdf' ? 'PDF' : 'ARCHIVO';
@@ -204,7 +225,7 @@ function renderAttachments() {
     const remove = el('button', 'remove-attachment', '×'); remove.type = 'button'; remove.setAttribute('aria-label', `Quitar ${item.file.name}`); remove.addEventListener('click', () => removeAttachment(item.id));
     row.append(visual, info, remove); selection.append(row);
   }
-  updateButtons();
+  describeCover(); updateButtons();
 }
 function removeAttachment(id) {
   if (state.busy || state.recording || state.preparingMicrophone) return;
@@ -276,17 +297,42 @@ function useCurrentLocation() {
 function scaledDimensions(width, height, maxPixels = 900000) { const scale = Math.min(1, Math.sqrt(maxPixels / (width * height))); return [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]; }
 function rgbaFromCanvas(canvas) { return { width: canvas.width, height: canvas.height, channels: 4, data: canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data.buffer }; }
 function coverDimensions() {
-  const edge = Number($('coverResolution').value), format = $('coverFormat').value;
-  return format === 'square' ? [edge, edge] : format === 'portrait' ? [Math.round(edge * 2 / 3), edge] : [edge, Math.round(edge * 2 / 3)];
+  const plan = currentCoverPlan(); return [plan.width, plan.height];
+}
+function currentCoverPlan() {
+  let ciphertextBytes = 0;
+  const draft = draftMessage(); const items = draft ? [...state.items, draft] : state.items;
+  if (items.length) {
+    const bundled = needsBundle(items);
+    const file = bundled ? { size: estimateBundleSize(items) } : items[0].file;
+    ciphertextBytes = estimateCiphertextBytes({ file, name: bundled ? 'NEBO-envio.zip' : file.name, mime: bundled ? BUNDLE_MIME : file.type || 'application/octet-stream' });
+  }
+  return planCover({ ciphertextBytes, format: $('coverFormat').value, resolution: $('coverResolution').value });
+}
+function coverFilter() {
+  return $('coverStyle').value === 'vivid' ? 'saturate(1.22) contrast(1.06)' : $('coverStyle').value === 'cinematic' ? 'saturate(0.88) contrast(1.14) sepia(0.08)' : 'none';
 }
 function describeCover() {
-  const [width, height] = coverDimensions(), image = $('coverReference');
-  $('coverDimensions').textContent = `${formatNumber(width)} × ${formatNumber(height)} píxeles de salida`;
-  if (image.naturalWidth) {
-    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
-    $('coverScaleNote').textContent = `Referencia: ${formatNumber(image.naturalWidth)} × ${formatNumber(image.naturalHeight)}. ${scale > 1.001 ? 'La imagen se amplía; el tamaño de salida no añade detalle nativo.' : 'Se ajusta y recorta al formato elegido.'}`;
-  }
-  image.dataset.style = $('coverStyle').value;
+  const image = $('coverReference'), live = $('liveCoverImage');
+  if (live.src !== image.src) live.src = image.src;
+  live.style.filter = coverFilter(); image.dataset.style = $('coverStyle').value;
+  const empty = $('emptyCoverImage');
+  if (empty.src !== image.src) empty.src = image.src;
+  empty.style.filter = coverFilter();
+  $('liveCoverTitle').textContent = { mountain: 'Montañas al atardecer', coast: 'Costa tropical', aurora: 'Aurora boreal', nebula: 'Cosmos', custom: 'Tu portada', source: 'Foto elegida como portada' }[state.cover];
+  try {
+    const { width, height, maxPngBytes, automatic } = currentCoverPlan();
+    live.style.aspectRatio = `${width} / ${height}`;
+    empty.style.aspectRatio = `${width} / ${height}`;
+    live.style.objectFit = 'cover';
+    $('coverDimensions').textContent = `${formatNumber(width)} × ${formatNumber(height)} px`;
+    $('liveCoverSize').textContent = `${automatic ? 'Tamaño automático' : 'Tamaño elegido'} · ${formatNumber(width)} × ${formatNumber(height)} px`;
+    $('estimatedSize').textContent = state.items.length ? `${state.items.length} elemento${state.items.length === 1 ? '' : 's'} · PNG hasta ${formatBytes(maxPngBytes)}; se optimiza al crear.` : 'Vista previa de la portada. Añade tu contenido para crear el envío.';
+    if (image.naturalWidth) {
+      const enlarged = Math.max(width / image.naturalWidth, height / image.naturalHeight) > 1.001;
+      $('coverScaleNote').textContent = enlarged ? 'La portada se ampliará. Los adjuntos conservan su calidad original.' : 'La portada se ajusta al formato. Los adjuntos se conservan completos.';
+    }
+  } catch (error) { $('estimatedSize').textContent = error.message; $('coverScaleNote').textContent = error.message; }
 }
 function chooseCover(kind, file = null) {
   if (state.busy) return;
@@ -301,7 +347,7 @@ function chooseCover(kind, file = null) {
     state.coverURL = URL.createObjectURL(selectedFile); $('coverReference').src = state.coverURL;
     info.append(el('strong', '', kind === 'source' ? 'La imagen del mensaje será la portada visible.' : 'Portada personalizada visible.'), el('span', '', selectedFile.name));
   } else $('coverReference').src = new URL(`./assets/${kind}.png`, location.href).href;
-  describeCover();
+  invalidateSenderResult(); describeCover();
 }
 async function prepareCover() {
   let blob;
@@ -313,7 +359,7 @@ async function prepareCover() {
   try {
     const [width, height] = coverDimensions(); const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
     const context = canvas.getContext('2d', { willReadFrequently: true }); context.fillStyle = '#ffffff'; context.fillRect(0, 0, width, height);
-    context.filter = $('coverStyle').value === 'vivid' ? 'saturate(1.22) contrast(1.06)' : $('coverStyle').value === 'cinematic' ? 'saturate(0.88) contrast(1.14) sepia(0.08)' : 'none';
+    context.filter = coverFilter();
     const scale = Math.max(width / bitmap.width, height / bitmap.height), drawnWidth = bitmap.width * scale, drawnHeight = bitmap.height * scale;
     context.drawImage(bitmap, (width - drawnWidth) / 2, (height - drawnHeight) / 2, drawnWidth, drawnHeight); context.filter = 'none';
     return rgbaFromCanvas(canvas);
@@ -323,10 +369,11 @@ function updateEncodingMode() {
   const privateMode = $('encodingMode').value === 'private';
   $('coverControls').classList.toggle('hidden', !privateMode); $('protectionControls').classList.toggle('hidden', !privateMode);
   $('advancedAccess').classList.toggle('hidden', !privateMode); $('encodingSummary').textContent = privateMode ? 'Privado' : 'Sin cifrado';
-  $('modeExplanation').textContent = privateMode ? 'Una portada a color transporta el archivo cifrado. Para recuperarlo hacen falta la obra, el token y la clave secreta o la identidad destinataria.' : 'Reorganiza los píxeles de una representación del archivo y conserva su paleta. La obra y el token permiten recuperarlo sin una clave secreta. Este modo no cifra el contenido.';
-  $('encodeButton').replaceChildren(document.createTextNode(privateMode ? 'Crear envío privado' : 'Crear permutación clásica'), el('span', '', '→'));
-  $('senderOutputSubtitle').textContent = privateMode ? 'Obra y token. El acceso se comparte por separado.' : 'Obra y token. Permutación clásica sin cifrado.';
-  $('senderResult').classList.add('hidden'); $('senderEmpty').classList.remove('hidden'); updateButtons();
+  $('liveCoverPanel').classList.toggle('hidden', !privateMode);
+  $('modeExplanation').textContent = privateMode ? 'La imagen lleva el contenido cifrado y su token integrado. Se abre con tu clave secreta o con la identidad del destinatario.' : 'Reorganiza los píxeles de una representación del archivo y conserva su paleta. La obra y el token permiten recuperarlo sin una clave secreta. Este modo no cifra el contenido.';
+  $('encodeButton').replaceChildren(document.createTextNode(privateMode ? 'Crear imagen privada' : 'Crear permutación clásica'), el('span', '', '→'));
+  $('senderOutputSubtitle').textContent = privateMode ? 'Una imagen para compartir. Tu clave, por separado.' : 'Obra y token. Permutación clásica sin cifrado.';
+  invalidateSenderResult(); describeCover(); updateButtons();
 }
 async function refreshIdentity() {
   try { state.identity = await loadIdentity(); }
@@ -338,7 +385,7 @@ async function refreshIdentity() {
 }
 function updateReceiverAccess() {
   const privateMode = state.tokenFormat === 'ASTRA-SECURE-V2'; $('receiverAccess').classList.toggle('hidden', !state.tokenFormat);
-  $('receiverFormatLabel').textContent = privateMode ? 'Envío privado cifrado · ASTRA-SECURE-V2' : state.tokenFormat === 'ASTRA-MSG-V1' ? 'Permutación clásica sin cifrado · ASTRA-MSG-V1' : 'Formato pendiente de validación';
+  $('receiverFormatLabel').textContent = privateMode ? 'Imagen privada · contenido cifrado' : state.tokenFormat === 'ASTRA-MSG-V1' ? 'Envío clásico · sin cifrado' : 'Formato pendiente de validación';
   const recipientMode = privateMode && state.tokenMode === 'recipient';
   $('receiverSecretFields').classList.toggle('hidden', !privateMode || recipientMode); $('receiverIdentityInfo').classList.toggle('hidden', !recipientMode);
   if (recipientMode) $('receiverIdentityInfo').textContent = state.identity ? 'Se usará la identidad privada guardada en este navegador. Solo una identidad coincidente puede abrir el envío.' : 'Este envío requiere la identidad destinataria que ya existía al enviarlo. Abre esta página en el navegador donde guardaste esa identidad; crear otra no recupera la anterior.';
@@ -394,9 +441,10 @@ async function preparePreview(file, bytes) {
 }
 function downloadName(name) { return name.replace(/\.[^.]+$/, '').replace(/[^\p{L}\p{N}._-]+/gu, '-').slice(0, 80) || 'archivo'; }
 async function encode() {
-  if (!state.file || state.busy || state.recording) return;
+  if (state.busy || state.contactBusy || state.recording || state.preparingMicrophone || !addDraftMessage() || !state.file) return;
   const privateMode = $('encodingMode').value === 'private'; const accessMode = document.querySelector('input[name=accessMode]:checked').value;
-  if (privateMode && accessMode === 'recipient' && (!state.recipient || !$('recipientVerified').checked)) { errorFor('sender', 'Carga la identidad pública y confirma su huella por otro canal.'); return; }
+  if (privateMode && accessMode === 'recipient' && (state.recipientLoading || !state.recipient || !$('recipientVerified').checked)) { errorFor('sender', 'Carga la identidad pública y confirma su huella por otro canal.'); return; }
+  const recipient = state.recipient;
   const items = state.items.map(({ file, kind }) => ({ file, kind })); const bundled = needsBundle(items); const serial = beginTask('sender');
   try {
     const file = bundled ? await createBundle(items) : items[0].file;
@@ -404,7 +452,7 @@ async function encode() {
     if (privateMode) {
       progress('sender', 3, 'Preparando la portada de alta resolución…');
       const cover = await prepareCover(); if (state.taskSerial !== serial) return;
-      result = await runWorker('encode', { file: bytes, name: file.name, mime: file.type || 'application/octet-stream', cover, ...(accessMode === 'recipient' ? { recipient: state.recipient } : {}) }, 'sender', 'secure');
+      result = await runWorker('encode', { file: bytes, name: file.name, mime: file.type || 'application/octet-stream', cover, embed_token: true, ...(accessMode === 'recipient' ? { recipient } : {}) }, 'sender', 'secure');
     } else {
       progress('sender', 3, 'Preparando una vista del original…'); let preview;
       try { preview = await preparePreview(file, bytes); } catch (error) { $('senderProgressText').textContent = 'La vista previa no está disponible. Conservaremos el archivo original completo.'; }
@@ -419,22 +467,27 @@ async function encode() {
     $('downloadArt').href = artURL; $('downloadArt').download = `${base}-NEBO-obra.png`;
     $('downloadToken').href = tokenURL; $('downloadToken').download = `${base}-NEBO-token.json`;
     // Share only the transport files. The recovery secret never enters this list.
-    state.shareFiles = [new File([art], `${base}-NEBO-obra.png`, { type: 'image/png' }), new File([token], `${base}-NEBO-token.txt`, { type: 'text/plain' })];
+    state.shareFiles = [new File([art], `${base}-NEBO-obra.png`, { type: 'image/png' })];
+    if (!privateMode) state.shareFiles.push(new File([token], `${base}-NEBO-token.txt`, { type: 'text/plain' }));
+    sharePackageButton.textContent = privateMode ? 'Compartir imagen ↗' : 'Compartir PNG y token ↗';
     let canShare = false; try { canShare = Boolean(navigator.share && navigator.canShare?.({ files: state.shareFiles })); } catch (_) {}
     sharePackageButton.classList.toggle('hidden', !canShare);
-    $('artworkCaption').textContent = privateMode ? 'Imagen portadora con datos cifrados; utiliza colores de referencia. No es una permutación del documento.' : 'Permutación clásica de la representación del archivo. Conserva sus píxeles y su paleta; no cifra el contenido.';
-    $('senderStats').replaceChildren(el('span', '', `${result.width} × ${result.height}`), el('span', '', `Token: ${formatBytes(result.token_bytes ?? token.size)}`), el('span', '', `${formatNumber(result.pixel_count)} píxeles`));
-    if (privateMode) $('senderStats').append(el('span', '', `${result.bits_per_channel ?? result.bits} bits por canal`));
+    $('artworkCaption').textContent = privateMode ? 'Imagen final verificada. Incluye el contenido cifrado y el token. Comparte la clave por separado.' : 'Permutación clásica de la representación del archivo. Conserva sus píxeles y su paleta; no cifra el contenido.';
+    $('senderStats').replaceChildren(el('span', '', `${result.width} × ${result.height} px`), el('span', '', `PNG: ${formatBytes(art.size)}`), el('span', '', privateMode ? 'Token integrado' : `Token: ${formatBytes(token.size)}`));
     $('senderStats').append(el('span', '', `${items.length} elemento${items.length === 1 ? '' : 's'} · ${formatBytes(file.size)}`));
+    const backup = document.querySelector('.token-backup'); backup.open = !privateMode;
+    backup.querySelector('summary').textContent = privateMode ? 'Copia opcional del token' : 'Token necesario para este envío clásico';
+    backup.querySelector('p').textContent = privateMode ? 'El PNG ya lo incluye. Puedes guardar otra copia por separado.' : 'Este modo anterior requiere compartir tanto el PNG como este token.';
+    document.querySelector('.pair-note').textContent = privateMode ? 'Comparte el PNG como archivo, sin comprimir ni editar. El token ya va dentro; la clave se comparte por separado.' : 'Comparte el PNG y el token. Este modo no cifra el contenido.';
     $('secretResult').classList.add('hidden'); $('recipientResult').classList.add('hidden'); $('recoverySecret').value = '';
     if (state.secretURL) { URL.revokeObjectURL(state.secretURL); state.secretURL = null; }
     if (privateMode && result.recovery_secret) {
       $('recoverySecret').value = result.recovery_secret; $('recoverySecret').type = 'password'; $('showSecret').textContent = 'Mostrar'; $('showSecret').setAttribute('aria-pressed', 'false');
       state.secretURL = objectURL(new Blob([result.recovery_secret + '\n'], { type: 'text/plain' })); $('downloadSecret').href = state.secretURL; $('downloadSecret').download = 'NEBO-SECURITY-clave-secreta.key.txt'; $('secretResult').classList.remove('hidden');
     } else if (privateMode) {
-      $('recipientResult').replaceChildren(el('strong', '', 'Protegido para la identidad destinataria'), el('code', 'fingerprint', await fingerprintPublicBundle(state.recipient))); $('recipientResult').classList.remove('hidden');
+      $('recipientResult').replaceChildren(el('strong', '', 'Protegido para la identidad destinataria'), el('code', 'fingerprint', await fingerprintPublicBundle(recipient))); $('recipientResult').classList.remove('hidden');
     }
-    $('conservationExplanation').textContent = privateMode ? 'El archivo original, su nombre y sus metadatos de recuperación se cifran con AES-256-GCM. Los datos cifrados se insertan en los bits menos significativos de la portada visible. El token permite localizar y autenticar el contenido; requiere además la clave secreta o la identidad privada destinataria.' : 'La representación reversible incluye el archivo original completo y, cuando está disponible, una vista previa. Una permutación conserva todos los píxeles de esa representación. La obra y el token bastan para recuperar el original; no hay cifrado.';
+    $('conservationExplanation').textContent = privateMode ? 'El contenido completo, sus nombres y sus metadatos se cifran con AES-256-GCM. Los datos cifrados viajan en los píxeles y el token integrado permite extraerlos y verificarlos. La compresión PNG es sin pérdida. La clave secreta o la identidad privada destinataria permanecen fuera del PNG.' : 'La representación reversible incluye el archivo original completo y, cuando está disponible, una vista previa. Una permutación conserva todos los píxeles de esa representación. La obra y el token bastan para recuperar el original; no hay cifrado.';
     $('senderHash').textContent = `SHA-256 ${bundled ? 'del paquete completo' : 'del archivo original'}: ${result.source_sha256}`;
     $('senderResult').classList.remove('hidden'); endTask('sender');
     mobileScroll();
@@ -443,22 +496,54 @@ async function encode() {
 async function setReceived(kind, file) {
   if (!file || state.busy) return;
   const artwork = kind === 'art'; if (file.size > (artwork ? 180 : 80) * 1048576) { errorFor('receiver', 'Este archivo supera el tamaño admitido para la reconstrucción en el navegador.'); return; }
+  const previousArt = state.receivedArt;
   state[artwork ? 'receivedArt' : 'receivedToken'] = file;
   $('receiverPanel').classList.remove('has-result'); $('receiverResult').classList.add('hidden');
   $(artwork ? 'receivedArtName' : 'receivedTokenName').textContent = `${file.name} · ${formatBytes(file.size)}`;
   $(artwork ? 'artDrop' : 'tokenDrop').classList.add('selected'); $(artwork ? 'artDrop' : 'tokenDrop').querySelector('.file-plus').textContent = '✓'; errorFor('receiver');
-  if (!artwork) {
-    try { const token = JSON.parse(await file.text()); if (state.receivedToken !== file) return; state.tokenFormat = token.format; state.tokenMode = token.mode; }
-    catch (_) { state.tokenFormat = null; state.tokenMode = null; errorFor('receiver', 'No se pudo leer el token como JSON. Selecciona el archivo original que acompaña al PNG.'); }
-    updateReceiverAccess();
+  if (artwork) {
+    const serial = ++state.receiveSerial;
+    state.inspectingArt = true; state.embeddedToken = null; state.tokenFormat = state.tokenMode = null;
+    if (previousArt) {
+      state.receivedToken = null; $('receivedToken').value = '';
+      $('receivedTokenName').textContent = 'Token en JSON o TXT'; $('tokenDrop').classList.remove('selected'); $('tokenDrop').querySelector('.file-plus').textContent = '+';
+    }
+    if (state.receivedPreviewURL) URL.revokeObjectURL(state.receivedPreviewURL);
+    state.receivedPreviewURL = null; $('receivedPreview').removeAttribute('src'); $('receivedPreview').classList.add('hidden');
+    $('embeddedTokenStatus').textContent = 'Leyendo la imagen y buscando el token…'; updateReceiverAccess(); updateButtons();
+    try {
+      const parsed = unpackPortablePNG(new Uint8Array(await file.arrayBuffer()));
+      if (serial !== state.receiveSerial) return;
+      if (parsed.token) state.embeddedToken = new Blob([parsed.token], { type: 'application/json' });
+      state.receivedPreviewURL = URL.createObjectURL(file); $('receivedPreview').src = state.receivedPreviewURL; $('receivedPreview').classList.remove('hidden');
+      $('embeddedTokenStatus').textContent = parsed.token ? 'Token integrado detectado. El contenido se verificará al abrir con tu clave o identidad.' : 'Este PNG usa un token separado. Selecciónalo para abrir el envío.';
+      $('legacyTokenOptions').open = !parsed.token;
+    } catch (error) {
+      if (serial !== state.receiveSerial) return;
+      state.receivedArt = null; $('embeddedTokenStatus').textContent = 'No se pudo leer este PNG de NEBO.';
+      errorFor('receiver', error.message || 'Selecciona el PNG original del envío, sin editar ni comprimir.');
+    } finally { if (serial === state.receiveSerial) { state.inspectingArt = false; updateButtons(); } }
   }
-  updateButtons();
+  const activeToken = state.embeddedToken || state.receivedToken;
+  if (activeToken) {
+    try {
+      const token = JSON.parse(await activeToken.text());
+      if (activeToken !== (state.embeddedToken || state.receivedToken)) return;
+      state.tokenFormat = token.format; state.tokenMode = token.mode;
+    } catch (_) {
+      if (activeToken !== (state.embeddedToken || state.receivedToken)) return;
+      state.tokenFormat = null; state.tokenMode = null; errorFor('receiver', 'No se pudo leer el token como JSON. Selecciona el token original de este envío.');
+    }
+  }
+  updateReceiverAccess(); updateButtons();
 }
 async function decode() {
-  if (state.busy || !state.receivedArt || !state.receivedToken) return;
+  if (state.busy || state.inspectingArt || !state.receivedArt || (!state.embeddedToken && !state.receivedToken)) return;
   const serial = beginTask('receiver');
   try {
-    const [artwork, token] = await Promise.all([state.receivedArt.arrayBuffer(), state.receivedToken.arrayBuffer()]);
+    // Explicit external tokens are checked against the embedded token by the codec.
+    const selectedToken = state.receivedToken || state.embeddedToken;
+    const [artwork, token] = await Promise.all([state.receivedArt.arrayBuffer(), selectedToken.arrayBuffer()]);
     if (state.taskSerial !== serial) return;
     const header = JSON.parse(new TextDecoder().decode(token)); const privateMode = header.format === 'ASTRA-SECURE-V2';
     let access = {};
@@ -487,7 +572,8 @@ async function decode() {
 }
 async function showRestoredItems(items) {
   const preview = $('restoredPreview'); preview.replaceChildren(); const list = el('div', 'restored-items'); preview.append(list);
-  for (const item of items) {
+  const order = item => item.kind === 'text' || item.mime.startsWith('text/') ? 0 : item.mime.startsWith('image/') ? 1 : item.mime.startsWith('audio/') ? 2 : item.mime.startsWith('video/') ? 3 : 4;
+  for (const item of [...items].sort((a, b) => order(a) - order(b))) {
     const blob = new Blob([item.bytes], { type: item.mime }); const url = objectURL(blob);
     const card = el('article', 'restored-item'); const heading = el('div', 'restored-item-heading');
     heading.append(el('strong', '', item.name), el('small', '', `${formatBytes(blob.size)} · Verificado`));
@@ -508,7 +594,7 @@ async function showRestored(blob, url, name, preview = $('restoredPreview'), kin
     if (Number.isFinite(geo.properties?.accuracy_meters) && geo.properties.accuracy_meters >= 0) preview.append(el('small', '', `Precisión aproximada: ${Math.round(geo.properties.accuracy_meters)} m`));
     const link = el('a', 'text-link location-map-link', 'Abrir ubicación en OpenStreetMap ↗'); link.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`; link.target = '_blank'; link.rel = 'noopener noreferrer'; preview.append(link);
   }
-  else if (mime.startsWith('image/')) { const image = el('img'); image.src = url; image.alt = 'Imagen original recuperada'; image.loading = 'lazy'; preview.append(image); }
+  else if (mime.startsWith('image/')) { const image = el('img'); image.src = url; image.alt = 'Imagen original recuperada'; image.loading = 'eager'; preview.append(image); }
   else if (mime.startsWith('audio/') || mime.startsWith('video/')) { const media = el(mime.startsWith('audio/') ? 'audio' : 'video'); media.controls = true; media.preload = 'none'; media.src = url; preview.append(media); }
   else if (mime === 'application/pdf') {
     // Recovered documents are untrusted. Never execute them in a same-origin
@@ -565,6 +651,45 @@ function setupDrop(node, callback, multiple = false) {
   node.addEventListener('drop', event => { event.preventDefault(); node.classList.remove('dragover'); if (!state.busy) callback(multiple ? event.dataTransfer.files : event.dataTransfer.files[0]); });
 }
 
+async function refreshContacts(selected = $('savedContact').value) {
+  try {
+    state.contacts = await listContacts();
+    const placeholder = el('option', '', state.contacts.length ? 'Seleccionar contacto' : 'Aún no hay contactos guardados'); placeholder.value = '';
+    $('savedContact').replaceChildren(placeholder);
+    for (const contact of state.contacts) { const option = el('option', '', contact.name); option.value = contact.id; $('savedContact').append(option); }
+    $('savedContact').value = state.contacts.some(contact => contact.id === selected) ? selected : '';
+  } catch (error) { $('contactStatus').textContent = error.message; }
+  updateButtons();
+}
+$('savedContact').addEventListener('change', () => {
+  state.recipientSerial++; state.recipientLoading = false;
+  const contact = state.contacts.find(item => item.id === $('savedContact').value);
+  state.recipient = contact?.publicBundle || null; $('recipientVerified').checked = Boolean(contact);
+  $('recipientSummary').classList.toggle('hidden', !contact); $('recipientFingerprint').textContent = contact?.id || '';
+  $('contactName').value = contact?.name || ''; $('recipientFile').value = '';
+  $('contactStatus').textContent = contact ? `Usando la identidad pública guardada de ${contact.name}.` : '';
+  invalidateSenderResult(); errorFor('sender'); updateButtons();
+});
+$('saveContact').addEventListener('click', async () => {
+  if (state.busy || state.contactBusy || !state.recipient || !$('recipientVerified').checked) return;
+  state.contactBusy = true; updateButtons();
+  try {
+    const contact = await saveContact($('contactName').value, state.recipient);
+    await refreshContacts(contact.id); $('contactStatus').textContent = `Contacto ${contact.name} guardado en este navegador.`;
+  } catch (error) { $('contactStatus').textContent = error.message; }
+  finally { state.contactBusy = false; updateButtons(); }
+});
+$('removeContact').addEventListener('click', async () => {
+  const id = $('savedContact').value; if (!id || state.busy || state.contactBusy) return;
+  state.contactBusy = true; updateButtons();
+  try {
+    await removeContact(id); state.recipient = null; $('recipientVerified').checked = false;
+    $('recipientSummary').classList.add('hidden'); $('contactName').value = ''; invalidateSenderResult();
+    await refreshContacts(''); $('contactStatus').textContent = 'Contacto eliminado. Las identidades privadas siguen en sus dispositivos.';
+  } catch (error) { $('contactStatus').textContent = error.message; }
+  finally { state.contactBusy = false; updateButtons(); }
+});
+
 $('senderTab').addEventListener('click', () => setMode('sender')); $('receiverTab').addEventListener('click', () => setMode('receiver'));
 $('mobileSendTab').addEventListener('click', () => { setMode('sender'); mobileScroll(); });
 $('mobileReceiveTab').addEventListener('click', () => { setMode('receiver'); mobileScroll(); });
@@ -575,17 +700,19 @@ $('mobileAction').addEventListener('click', () => {
   if (state.activeMode === 'receiver') {
     if ($('receiverPanel').classList.contains('has-result')) $('downloadRestored').click(); else decode();
   } else if (state.recording) stopRecording(false);
-  else if (state.mobileStep === 0 && state.file) setMobileStep(1);
-  else if (state.mobileStep === 1) encode();
-  else if (state.mobileStep === 2) setMobileStep(1);
+  else if (state.mobileStep === 0 || state.mobileStep === 1) encode();
+  else if (state.mobileStep === 2) setMobileStep(0);
 });
+$('editCoverButton').addEventListener('click', () => { if (mobileScreen.matches) setMobileStep(1); else $('coverControls').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('photoFile').addEventListener('change', () => { const files = Array.from($('photoFile').files); $('photoFile').value = ''; addFiles(files); });
 $('sourceFile').addEventListener('change', () => { const files = Array.from($('sourceFile').files); $('sourceFile').value = ''; addFiles(files); }); $('receivedArt').addEventListener('change', () => setReceived('art', $('receivedArt').files[0])); $('receivedToken').addEventListener('change', () => setReceived('token', $('receivedToken').files[0]));
 setupDrop($('sourceDrop'), addFiles, true); setupDrop($('artDrop'), file => setReceived('art', file)); setupDrop($('tokenDrop'), file => setReceived('token', file));
 $('clearAttachments').addEventListener('click', clearFile);
 $('encodeButton').addEventListener('click', encode); $('decodeButton').addEventListener('click', decode); document.querySelectorAll('.cancel-task').forEach(button => button.addEventListener('click', cancelTask));
 $('recordButton').addEventListener('click', startRecording); $('stopRecord').addEventListener('click', () => stopRecording(false)); $('cancelRecord').addEventListener('click', () => stopRecording(true));
-$('textButton').addEventListener('click', () => { $('textEditor').classList.toggle('hidden'); if (!$('textEditor').classList.contains('hidden')) $('textInput').focus(); });
-$('useText').addEventListener('click', () => { const text = $('textInput').value; if (!text.trim()) { errorFor('sender', 'Escribe tu mensaje antes de añadirlo.'); return; } const count = state.items.filter(item => item.kind === 'text').length; if (selectFile(new File([text], count ? `mensaje-nebo-${count + 1}.txt` : 'mensaje-nebo.txt', { type: 'text/plain' }), 'text')) { $('textInput').value = ''; $('textEditor').classList.add('hidden'); toast('Mensaje añadido al envío.'); } });
+$('textButton').addEventListener('click', () => $('textInput').focus());
+$('textInput').addEventListener('input', () => { invalidateSenderResult(); describeCover(); updateButtons(); });
+$('useText').addEventListener('click', () => { if (!draftMessage()) { errorFor('sender', 'Escribe tu mensaje antes de añadirlo.'); return; } if (addDraftMessage()) toast('Mensaje añadido al envío.'); });
 $('locationButton').addEventListener('click', () => { const editor = $('locationEditor'); editor.classList.toggle('hidden'); $('locationButton').setAttribute('aria-expanded', String(!editor.classList.contains('hidden'))); if (!editor.classList.contains('hidden')) $('locationLabel').focus(); });
 $('useCurrentLocation').addEventListener('click', useCurrentLocation); $('addLocation').addEventListener('click', addLocation);
 for (const id of ['locationLatitude', 'locationLongitude']) $(id).addEventListener('input', () => { state.locationRequest++; state.locating = false; state.locationFix = null; $('locationStatus').textContent = ''; updateButtons(); });
@@ -595,17 +722,23 @@ document.querySelectorAll('.cover-choice').forEach(button => button.addEventList
 $('encodingMode').addEventListener('change', updateEncodingMode);
 $('coverReference').addEventListener('load', describeCover);
 $('coverReference').addEventListener('error', () => { $('coverScaleNote').textContent = 'No se pudo cargar la referencia. Selecciona otra portada o sube una imagen.'; });
-$('coverFormat').addEventListener('change', () => { const square = $('coverFormat').value === 'square'; $('coverResolution').querySelector('option[value="4096"]').disabled = !square; if (!square && $('coverResolution').value === '4096') $('coverResolution').value = '3840'; describeCover(); });
-$('coverResolution').addEventListener('change', describeCover); $('coverStyle').addEventListener('change', describeCover);
+for (const id of ['coverFormat', 'coverResolution', 'coverStyle']) $(id).addEventListener('change', () => { invalidateSenderResult(); describeCover(); });
 $('coverFile').addEventListener('change', () => { const file = $('coverFile').files[0]; if (!file) return; if (!file.type.startsWith('image/') || file.size > MAX_FILE_BYTES) { errorFor('sender', 'Selecciona una imagen de portada de hasta 20 MB.'); return; } chooseCover('custom', file); });
 $('useSourceCover').addEventListener('click', () => { const image = state.items.find(item => item.file.type.startsWith('image/')); if (image) { chooseCover('source', image.file); toast('La primera foto adjunta será la portada visible. Puedes elegir otra desde la lista.'); } });
-document.querySelectorAll('input[name=accessMode]').forEach(input => input.addEventListener('change', () => { const recipient = document.querySelector('input[name=accessMode]:checked').value === 'recipient'; $('recipientControls').classList.toggle('hidden', !recipient); $('accessSummary').textContent = recipient ? 'Identidad destinataria' : 'Clave secreta'; updateButtons(); }));
+document.querySelectorAll('input[name=accessMode]').forEach(input => input.addEventListener('change', () => { const recipient = document.querySelector('input[name=accessMode]:checked').value === 'recipient'; $('recipientControls').classList.toggle('hidden', !recipient); $('accessSummary').textContent = recipient ? 'Identidad destinataria' : 'Clave secreta'; invalidateSenderResult(); updateButtons(); }));
 $('recipientFile').addEventListener('change', async () => {
+  const serial = ++state.recipientSerial; state.recipientLoading = false;
+  $('savedContact').value = ''; $('contactName').value = ''; $('contactStatus').textContent = '';
   state.recipient = null; $('recipientVerified').checked = false; $('recipientSummary').classList.add('hidden'); updateButtons(); const file = $('recipientFile').files[0]; if (!file) return;
-  try { state.recipient = await loadRecipientBundle(file); $('recipientFingerprint').textContent = await fingerprintPublicBundle(state.recipient); $('recipientSummary').classList.remove('hidden'); errorFor('sender'); }
-  catch (error) { errorFor('sender', error.message); } updateButtons();
+  state.recipientLoading = true; invalidateSenderResult(); updateButtons();
+  try {
+    const recipient = await loadRecipientBundle(file); const fingerprint = await fingerprintPublicBundle(recipient);
+    if (serial !== state.recipientSerial) return;
+    state.recipient = recipient; $('recipientFingerprint').textContent = fingerprint; $('recipientSummary').classList.remove('hidden'); errorFor('sender');
+  } catch (error) { if (serial === state.recipientSerial) errorFor('sender', error.message); }
+  finally { if (serial === state.recipientSerial) { state.recipientLoading = false; updateButtons(); } }
 });
-$('recipientVerified').addEventListener('change', updateButtons);
+$('recipientVerified').addEventListener('change', () => { invalidateSenderResult(); updateButtons(); });
 $('showSecret').addEventListener('click', () => { const show = $('recoverySecret').type === 'password'; $('recoverySecret').type = show ? 'text' : 'password'; $('showSecret').textContent = show ? 'Ocultar' : 'Mostrar'; $('showSecret').setAttribute('aria-pressed', String(show)); });
 $('copySecret').addEventListener('click', copySecret);
 sharePackageButton.addEventListener('click', async () => {
@@ -624,8 +757,8 @@ window.addEventListener('beforeunload', () => { state.recording?.stream.getTrack
 function applyResponsiveLayout() {
   $('advancedOptions').open = !mobileScreen.matches;
   $('advancedAccess').open = !mobileScreen.matches || document.querySelector('input[name=accessMode]:checked').value === 'recipient';
-  const names = mobileScreen.matches ? ['Horizontal', 'Vertical', 'Cuadrado'] : ['Horizontal · 3:2', 'Vertical · 2:3', 'Cuadrado · 1:1'];
-  Array.from($('coverFormat').options).forEach((option, i) => { option.textContent = names[i]; });
+  const names = mobileScreen.matches ? { auto: 'Automático', landscape: 'Horizontal', portrait: 'Vertical', square: 'Cuadrado' } : { auto: 'Automático · según el envío', landscape: 'Horizontal · 3:2', portrait: 'Vertical · 2:3', square: 'Cuadrado · 1:1' };
+  Array.from($('coverFormat').options).forEach(option => { option.textContent = names[option.value]; });
   $('sourceDrop').querySelector('small').textContent = 'Hasta 20 MB en total · 32 elementos';
   syncMobile();
 }
@@ -634,4 +767,7 @@ document.querySelector('.help-link').addEventListener('click', () => { document.
 applyResponsiveLayout(); renderAttachments();
 setMode(new URLSearchParams(location.search).get('modo') === 'recibir' ? 'receiver' : 'sender'); updateEncodingMode(); describeCover();
 if (!window.Worker || !window.crypto?.subtle) { $('compatibility').textContent = 'Usa un navegador actualizado y abre esta página mediante HTTPS para procesar y verificar archivos localmente.'; $('compatibility').classList.remove('hidden'); }
-startWorker('classic'); startWorker('secure'); refreshIdentity();
+startWorker('classic'); startWorker('secure'); refreshIdentity(); refreshContacts();
+initInstallUI();
+// Keep the visible page from accepting files before its module handlers exist.
+document.querySelectorAll('[data-app-initializing]').forEach(node => { node.inert = false; node.removeAttribute('data-app-initializing'); });

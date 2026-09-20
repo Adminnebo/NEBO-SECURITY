@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "NEBO AI SECURITY",
+  "short_name": "NEBO SECURITY",
+  "description": "Archivos privados dentro de una imagen. Crea y recupera envíos en tu dispositivo.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f2",
+  "theme_color": "#f6f5f2",
+  "icons": [
+    { "src": "./assets/nebo-symbol.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./assets/nebo-logo-original.png", "sizes": "1834x1800", "type": "image/png", "purpose": "any" }
+  ]
+}
