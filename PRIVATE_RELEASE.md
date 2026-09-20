@@ -27,6 +27,8 @@ a las identidades no exportables que pertenecen al navegador/origen anterior.
 
 - `PRIVATE_ANONYMOUS_REPORT.json`: ocho rutas del alojamiento rechazaron acceso
   anónimo con HTTP 401, sin HTML ni JavaScript de NEBO expuestos.
+- `PRIVATE_DEPLOYED_ANONYMOUS_REPORT.json`: se repitieron las ocho rutas después
+  de publicar la versión 10; todas rechazaron acceso anónimo con HTTP 401.
 - `PRIVATE_BOOTSTRAP_REPORT.json`: 12 casos de validación, entradas inválidas,
   autorización, nueva comprobación al operar y cierre tras revocación.
 - `PRIVATE_SW_REPORT.json`: 15 casos de migración desde el SW público real,
@@ -36,6 +38,13 @@ a las identidades no exportables que pertenecen al navegador/origen anterior.
 - `PRIVATE_MANIFEST_REPORT.json`: cinco casos con sesión HttpOnly simulada;
   el manifiesto recibe la cookie, se analiza como standalone y el navegador
   informa cero errores de instalación. El control sin credenciales falla.
+- `PRIVATE_DEPLOYED_OWNER_REPORT.json`: cuatro recorridos contra la URL real,
+  con la credencial de pruebas del propietario solo en memoria; un receptor
+  nuevo recuperó exactamente el original desde PNG y clave, rechazó una clave
+  incorrecta y se verificó la persistencia de contactos.
+- `PRIVATE_DEPLOYED_SOURCE_REPORT.json`: ocho recursos protegidos devolvieron
+  HTTP 200 con acceso autorizado y coincidieron byte por byte con el código
+  del commit publicado `9ab7809805b3ac2a31d4dce797424351110722b7`.
 - `tests/ui-v10/`: gate y aplicación en 320, 390 y 1440 px; instalador y controles
   de cabecera de 44 px. Las pruebas no equivalen a uso en teléfonos físicos.
 
@@ -43,6 +52,9 @@ Las validaciones públicas autenticadas pueden usar la credencial de pruebas del
 propietario ya proporcionada por Sites, solo en memoria y contra ese origen.
 No equivalen a automatizar el inicio de sesión OAuth de una persona. Las pruebas
 anónimas usan contextos nuevos sin credenciales de ningún tipo.
+Chromium omite la cabecera de pruebas en la descarga inicial del SW: el ensayo
+intercepta únicamente esa petición del mismo origen para añadirla. No se cambia
+el comportamiento de producción, que recibe la cookie de una sesión real.
 
 No es posible retirar copias anteriores que otra persona ya descargó o clonó.
 La política protege esta publicación alojada, no revoca los archivos históricos.

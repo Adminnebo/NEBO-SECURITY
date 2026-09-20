@@ -22,6 +22,10 @@ def run(base, report):
             target = urlsplit(route.request.url)
             if target.scheme in ('http', 'https') and target.netloc != allowed_origin:
                 route.abort()
+            elif target.path == '/sw.js':
+                # Chromium omits context extra headers from the initial SW
+                # script fetch. Supply the same QA header to that request only.
+                route.continue_(headers={**route.request.headers, **headers})
             else: route.continue_()
         ctx.route('**/*', route_request)
     def passed(name, **details):
@@ -78,7 +82,11 @@ def run(base, report):
         expect(receiver.locator('#receiverError')).to_be_visible(timeout=45000)
         expect(receiver.locator('#receiverResult')).to_be_hidden()
         receiver.locator('#receivedSecret').fill(secret)
-        receiver.locator('#mobileAction').click(); wait_result(receiver, 'receiver')
+        receiver.locator('#mobileAction').click()
+        # The private release awaits the network access probe before clearing
+        # the previous error; do not mistake that old error for the new result.
+        expect(receiver.locator('#receiverError')).to_be_hidden(timeout=15000)
+        wait_result(receiver, 'receiver')
         data, name = download(receiver, '#downloadRestored')
         assert data == text.encode('utf8')
         expect(receiver.locator('#restoredPreview pre')).to_have_text(text)

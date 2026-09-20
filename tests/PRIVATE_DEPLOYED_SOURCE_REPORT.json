@@ -1,0 +1,67 @@
+{
+  "base_url": "https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site",
+  "version_number": 10,
+  "commit_sha": "9ab7809805b3ac2a31d4dce797424351110722b7",
+  "scope": "Authorized source delivery and byte equality only; not OAuth or live browser flow.",
+  "credential_recorded": false,
+  "redirects_followed": false,
+  "checks": [
+    {
+      "path": "/access.js",
+      "passed": true,
+      "status": 200,
+      "bytes": 5727,
+      "sha256": "2382c744c848c527e94a328243d1fd568cda9d0cce09472f5ee0821cb1964f2c"
+    },
+    {
+      "path": "/access-check.json",
+      "passed": true,
+      "status": 200,
+      "bytes": 46,
+      "sha256": "081f948646f7de1722cc24c7c2ec1a156fc0ff1a7e684733e05f3bb5cbf84a07"
+    },
+    {
+      "path": "/app.js",
+      "passed": true,
+      "status": 200,
+      "bytes": 74303,
+      "sha256": "49731de7e825f764d2cc2f8030dfc6aa957425ed6acd156daf4aa92a7e9664f3"
+    },
+    {
+      "path": "/sw.js",
+      "passed": true,
+      "status": 200,
+      "bytes": 2374,
+      "sha256": "26597b442fdeb7b3aeac3bbc5a6e4c56e00c28c8e3e50b19b2584242c1b056ec"
+    },
+    {
+      "path": "/install.js",
+      "passed": true,
+      "status": 200,
+      "bytes": 3733,
+      "sha256": "6abfd71d7625e6e30b710c745c2720af14ca7412705ea98c3bf0581d2dd203a3"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "passed": true,
+      "status": 200,
+      "bytes": 625,
+      "sha256": "b7ef48797c6c8a314fd30d682a97d0902bfa2cfe51f1bc475b9e66f068755b92"
+    },
+    {
+      "path": "/secure-worker.js",
+      "passed": true,
+      "status": 200,
+      "bytes": 23633,
+      "sha256": "69b335b42c995093686cf34958ff4d68b38a8b30673987779dae607f2d16ca51"
+    },
+    {
+      "path": "/portable-png.js",
+      "passed": true,
+      "status": 200,
+      "bytes": 7331,
+      "sha256": "17f29a42c79fea351827781fd616cd7e2dba911755cda75041ff85a85359459c"
+    }
+  ],
+  "passed": true
+}

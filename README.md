@@ -57,7 +57,8 @@ y guardar una copia opcional del token por separado.
 4. Guarda la clave secreta generada. No está dentro del PNG ni del token.
    Compártela por un canal separado y protegido. Si la pierdes, no existe una
    clave maestra del servidor que permita recuperar el archivo.
-5. Envía el PNG junto con el enlace del receptor. En WhatsApp, adjunta el
+5. Autoriza primero la cuenta del receptor en el acceso del alojamiento.
+   Envía el PNG junto con el enlace del receptor. En WhatsApp, adjunta el
    PNG como documento/archivo, sin recomprimir.
 6. El receptor selecciona el PNG, ve su portada inmediatamente y aporta la
    clave secreta. No necesita el original ni descargar un token adicional.
