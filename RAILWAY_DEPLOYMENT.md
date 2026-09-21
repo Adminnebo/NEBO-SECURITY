@@ -1,14 +1,14 @@
 # NEBO AI - SECURITY: PostgreSQL en Railway
 
-La rama `version-12-postgresql-railway` ejecuta un servidor Node.js 24 y usa
+La rama `main` ejecuta un servidor Node.js 24 y usa
 PostgreSQL para usuarios, hashes de contraseña, sesiones y límites de acceso.
 El contenido de los envíos y sus claves sigue procesándose en el navegador.
 
 ## 1. Seleccionar la versión y la base
 
 1. Abre el servicio **NEBO-SECURITY** en tu proyecto de Railway.
-2. En **Settings → Source**, selecciona `version-12-postgresql-railway`.
-   `main` conserva una publicación anterior que no tiene este servidor.
+2. En **Settings → Source**, selecciona `main`, que ya incluye el login y
+   PostgreSQL. La rama `version-12-postgresql-railway` también conserva esta versión.
 3. En el proyecto añade **New → Database → PostgreSQL**.
 4. En **Variables** del servicio de la aplicación crea la referencia
    `DATABASE_URL=${{Postgres.DATABASE_URL}}`. Sustituye `Postgres` por el nombre

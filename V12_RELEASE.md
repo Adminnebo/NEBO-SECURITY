@@ -52,7 +52,8 @@ ejecutó un contenedor Docker en esta máquina.
 
 ## Despliegue y datos existentes
 
-Selecciona la rama `version-12-postgresql-railway` en Railway y configura las
+Selecciona la rama `main` en Railway (también disponible como
+`version-12-postgresql-railway`) y configura las
 variables de [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md). El dominio necesita
 el servidor y la base, además de los archivos del cliente.
 

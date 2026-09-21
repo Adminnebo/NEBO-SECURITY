@@ -4,8 +4,9 @@
 para cada persona desde **Mi cuenta → Personas con acceso → Crear usuario**.
 El botón **Copiar enlace, usuario y contraseña** prepara los datos para compartir.
 La otra persona entra con esas credenciales; no necesita una cuenta de ChatGPT.
-No existe registro público. La rama `version-12-postgresql-railway` incorpora
-PostgreSQL y conserva la versión 11 en `version-11-usuarios-nebo`.
+No existe registro público. La rama `main` contiene esta versión con PostgreSQL.
+También está disponible en `version-12-postgresql-railway`; la versión 11 se
+conserva en `version-11-usuarios-nebo`.
 
 La pantalla de login es pública. El servidor comprueba la sesión
 antes de entregar la aplicación y sus recursos privados. PostgreSQL
