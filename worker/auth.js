@@ -87,21 +87,25 @@ async function initialize(env) {
   const username = normalizeUsername(bootstrap?.username);
   if (!username || !parseHash(bootstrap?.passwordHash)) throw new Error('Invalid bootstrap configuration');
   const name = displayName(bootstrap.displayName, username);
-  await env.DB.batch([
-    env.DB.prepare('CREATE TABLE IF NOT EXISTS nebo_auth_meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)'),
-    env.DB.prepare("CREATE TABLE IF NOT EXISTS nebo_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('admin', 'user')), disabled INTEGER NOT NULL DEFAULT 0 CHECK (disabled IN (0, 1)), created_at INTEGER NOT NULL)"),
-    env.DB.prepare('CREATE TABLE IF NOT EXISTS nebo_sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES nebo_users(id) ON DELETE CASCADE, csrf_token TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL)'),
-    env.DB.prepare('CREATE INDEX IF NOT EXISTS nebo_sessions_user ON nebo_sessions(user_id)'),
-    env.DB.prepare('CREATE INDEX IF NOT EXISTS nebo_sessions_expiry ON nebo_sessions(expires_at)'),
-    env.DB.prepare('CREATE TABLE IF NOT EXISTS nebo_auth_limits (bucket TEXT PRIMARY KEY, window_start INTEGER NOT NULL, attempts INTEGER NOT NULL)'),
-    env.DB.prepare('CREATE INDEX IF NOT EXISTS nebo_auth_limits_window ON nebo_auth_limits(window_start)'),
-  ]);
-  // D1 batches are transactions: only the first successful initialization inserts
-  // the owner. The persistent marker prevents resurrection after later changes.
-  await env.DB.batch([
-    env.DB.prepare("INSERT INTO nebo_users (id, username, display_name, password_hash, role, disabled, created_at) SELECT ?, ?, ?, ?, 'admin', 0, ? WHERE NOT EXISTS (SELECT 1 FROM nebo_auth_meta WHERE name = 'bootstrapped') AND NOT EXISTS (SELECT 1 FROM nebo_users)").bind(randomUUID(), username, name, bootstrap.passwordHash, nowSeconds()),
-    env.DB.prepare("INSERT OR IGNORE INTO nebo_auth_meta (name, value) VALUES ('bootstrapped', '1')"),
-  ]);
+  const initializeDatabase = async database => {
+    await database.batch([
+      database.prepare('CREATE TABLE IF NOT EXISTS nebo_auth_meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)'),
+      database.prepare("CREATE TABLE IF NOT EXISTS nebo_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('admin', 'user')), disabled INTEGER NOT NULL DEFAULT 0 CHECK (disabled IN (0, 1)), created_at INTEGER NOT NULL)"),
+      database.prepare('CREATE TABLE IF NOT EXISTS nebo_sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES nebo_users(id) ON DELETE CASCADE, csrf_token TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL)'),
+      database.prepare('CREATE INDEX IF NOT EXISTS nebo_sessions_user ON nebo_sessions(user_id)'),
+      database.prepare('CREATE INDEX IF NOT EXISTS nebo_sessions_expiry ON nebo_sessions(expires_at)'),
+      database.prepare('CREATE TABLE IF NOT EXISTS nebo_auth_limits (bucket TEXT PRIMARY KEY, window_start INTEGER NOT NULL, attempts INTEGER NOT NULL)'),
+      database.prepare('CREATE INDEX IF NOT EXISTS nebo_auth_limits_window ON nebo_auth_limits(window_start)'),
+    ]);
+    // The persistent marker prevents resurrection after later account changes.
+    // D1 serializes each batch; PostgreSQL also locks the complete initialization.
+    await database.batch([
+      database.prepare("INSERT INTO nebo_users (id, username, display_name, password_hash, role, disabled, created_at) SELECT ?, ?, ?, ?, 'admin', 0, ? WHERE NOT EXISTS (SELECT 1 FROM nebo_auth_meta WHERE name = 'bootstrapped') AND NOT EXISTS (SELECT 1 FROM nebo_users)").bind(randomUUID(), username, name, bootstrap.passwordHash, nowSeconds()),
+      database.prepare("INSERT INTO nebo_auth_meta (name, value) VALUES ('bootstrapped', '1') ON CONFLICT(name) DO NOTHING"),
+    ]);
+  };
+  if (typeof env.DB.withInitializationLock === 'function') await env.DB.withInitializationLock(initializeDatabase);
+  else await initializeDatabase(env.DB);
 }
 
 export async function ensureDatabase(env) {
@@ -211,9 +215,13 @@ export async function login(request, env) {
   const token = randomBytes(32).toString('base64url');
   const csrfToken = randomBytes(32).toString('base64url');
   const now = nowSeconds();
-  // Recheck the hash inside the INSERT to stop a concurrent password reset or
-  // disabling operation from issuing a fresh session for obsolete credentials.
-  const result = await env.DB.prepare('INSERT INTO nebo_sessions (token_hash, user_id, csrf_token, created_at, expires_at) SELECT ?, id, ?, ?, ? FROM nebo_users WHERE id = ? AND password_hash = ? AND disabled = 0').bind(digest(token), csrfToken, now, now + SESSION_SECONDS, row.id, row.password_hash).run();
+  // Recheck credentials at insertion. PostgreSQL also holds a shared user-row
+  // lock through commit so a concurrent reset/disable either happens first or
+  // revokes this session afterwards. The expensive KDF stays outside the lock.
+  const insertSession = database => database.prepare('INSERT INTO nebo_sessions (token_hash, user_id, csrf_token, created_at, expires_at) SELECT ?, id, ?, ?, ? FROM nebo_users WHERE id = ? AND password_hash = ? AND disabled = 0').bind(digest(token), csrfToken, now, now + SESSION_SECONDS, row.id, row.password_hash).run();
+  const result = typeof env.DB.withUserLock === 'function'
+    ? await env.DB.withUserLock(row.id, insertSession)
+    : await insertSession(env.DB);
   if (result.meta.changes !== 1) throw new HttpError(401, 'Usuario o contraseña incorrectos.');
   return {
     body: { ok: true, user: publicUser(row), csrfToken },

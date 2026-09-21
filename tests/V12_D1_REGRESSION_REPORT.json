@@ -1,0 +1,96 @@
+{
+  "testedAt": "2026-09-21T14:25:03.088Z",
+  "implementation": "Actual Worker modules; real node:crypto scrypt; SQLite transaction adapter for D1; no deployed service or OAuth claim",
+  "passed": true,
+  "durationSeconds": 7.337,
+  "checks": [
+    {
+      "name": "scrypt has independent 128-bit salts, correct parameters and constant-size keys",
+      "passed": true
+    },
+    {
+      "name": "anonymous documents redirect; direct private assets and APIs reject access",
+      "passed": true
+    },
+    {
+      "name": "only login and allowlisted presentation files are public",
+      "passed": true
+    },
+    {
+      "name": "missing database or bootstrap configuration fails closed on every surface",
+      "passed": true
+    },
+    {
+      "name": "login rejects absent/foreign Origin, oversized and malformed request bodies",
+      "passed": true
+    },
+    {
+      "name": "unknown account and wrong password return the same generic failure",
+      "passed": true
+    },
+    {
+      "name": "owner login creates a hash-only session and secure HttpOnly cookie",
+      "passed": true
+    },
+    {
+      "name": "duplicate/malformed session cookies fail; authenticated login redirects home",
+      "passed": true
+    },
+    {
+      "name": "admin mutations require both exact Origin and per-session CSRF",
+      "passed": true
+    },
+    {
+      "name": "admin can create only ordinary users; request cannot elevate role",
+      "passed": true
+    },
+    {
+      "name": "ordinary users cannot list/create/disable/reset accounts",
+      "passed": true
+    },
+    {
+      "name": "no public registration and owner cannot be disabled/reset through user endpoints",
+      "passed": true
+    },
+    {
+      "name": "expired sessions cannot access any private asset",
+      "passed": true
+    },
+    {
+      "name": "disable revokes every session; reenabling does not restore old cookies",
+      "passed": true
+    },
+    {
+      "name": "admin password reset revokes sessions and invalidates old password",
+      "passed": true
+    },
+    {
+      "name": "own password change revokes all sessions and needs current password",
+      "passed": true
+    },
+    {
+      "name": "logout rejects missing CSRF, deletes session, and invalidates replay",
+      "passed": true
+    },
+    {
+      "name": "bootstrap is persistent across a fresh D1 wrapper and never recreates deleted owner",
+      "passed": true
+    },
+    {
+      "name": "account and IP rate limits persist in SQLite and reserve attempts atomically",
+      "passed": true
+    },
+    {
+      "name": "simultaneous login attempts cannot cross the account limit",
+      "passed": true
+    },
+    {
+      "name": "password reset during verification cannot issue an obsolete-password session",
+      "passed": true
+    },
+    {
+      "name": "storage exception never falls through to app or assets",
+      "passed": true
+    }
+  ]
+}

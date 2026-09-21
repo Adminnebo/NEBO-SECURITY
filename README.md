@@ -1,17 +1,19 @@
 # NEBO AI - SECURITY
 
-**Versión 11: usuarios y contraseñas de NEBO.** El administrador crea una cuenta
+**Versión 12: PostgreSQL y servidor Node.js para Railway.** El administrador crea una cuenta
 para cada persona desde **Mi cuenta → Personas con acceso → Crear usuario**.
 El botón **Copiar enlace, usuario y contraseña** prepara los datos para compartir.
 La otra persona entra con esas credenciales; no necesita una cuenta de ChatGPT.
-No existe registro público. La rama `version-11-usuarios-nebo` conserva esta
-modalidad por separado de `version-10-acceso-privado` y las versiones anteriores.
+No existe registro público. La rama `version-12-postgresql-railway` incorpora
+PostgreSQL y conserva la versión 11 en `version-11-usuarios-nebo`.
 
-La pantalla de login es pública. Un Worker comprueba la sesión en el servidor
-antes de entregar la aplicación y sus recursos privados. Una base de datos D1
+La pantalla de login es pública. El servidor comprueba la sesión
+antes de entregar la aplicación y sus recursos privados. PostgreSQL
 conserva las cuentas y sesiones entre publicaciones. La contraseña de la cuenta
 abre la app; **no sustituye la clave secreta de un envío** ni permite recuperar
-mensajes sin ella. [Diseño y límites del acceso](public/spec/NATIVE_AUTH.md).
+mensajes sin ella. [Instalación en Railway y variables](RAILWAY_DEPLOYMENT.md).
+El servidor reutiliza las rutas de autenticación de la versión 11 y conserva
+su compatibilidad con Cloudflare D1 para el alojamiento anterior.
 
 La app necesita conexión para comprobar la autorización al entrar y antes de
 crear o abrir un envío. Una sesión que deja de verificarse se cierra y descarta
@@ -28,9 +30,13 @@ La interfaz combina tonos perla y carbón; los estados conservan su color semán
 
 Repositorio: https://github.com/Adminnebo/NEBO-SECURITY
 
-Web: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
+Despliegue anterior (versión 11, Cloudflare D1): https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site
 
-Receptor: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir
+Receptor de ese despliegue: https://astra-pixel-mensajes-lucas.lucasarmando417.chatgpt.site/?modo=recibir
+
+La URL de la versión 12 será la del servicio Railway configurado. `PUBLICACION.json`
+documenta el despliegue anterior; subir esta rama no migra automáticamente su
+base D1, sus usuarios ni las sesiones a PostgreSQL.
 
 Aplicación web en español con autenticación de servidor. El navegador cifra y
 recupera los archivos; las API de cuenta reciben credenciales y datos de acceso,
@@ -191,15 +197,20 @@ Las instrucciones para repetir las pruebas están en `SECURITY_TEST_REPORT.md`.
 
 ## Ejecutar localmente
 
-La versión 11 necesita el Worker y D1; `python -m http.server` no implementa su
-autenticación. Instala las dependencias de desarrollo con `npm ci`, configura
-el secreto local `NEBO_BOOTSTRAP_ADMIN_JSON` en `.dev.vars` y genera los recursos
-con `python package_site_worker.py --dev-assets`. Ejecuta Wrangler con
-`wrangler.local.jsonc`, usando HTTPS para probar las cookies `Secure` y el
-service worker. El [documento de autenticación](public/spec/NATIVE_AUTH.md)
-describe el bootstrap. No incluyas `.dev.vars` ni contraseñas en Git.
+Instala Node.js 24 y PostgreSQL. Ejecuta `npm ci`, copia `.env.example` a `.env`
+y configura `DATABASE_URL` y el secreto del administrador generado con
+`npm run admin:config`. `npm run dev` genera los recursos privados y arranca
+en `http://localhost:3000`. Para producción usa HTTPS y las variables del
+servidor. Consulta [la guía completa](RAILWAY_DEPLOYMENT.md).
 
-`package_site_worker.py` crea el paquete de publicación a partir del commit,
+La contraseña inicial solo se aplica a una base vacía. Las cuentas anteriores
+se conservan al reiniciar el servidor. `.env`, `.dev.vars` y `*.key.txt` están
+excluidos de Git. No publiques `public/` como un sitio estático.
+
+Para el despliegue Cloudflare de la versión 11 se conserva `npm run dev:cloudflare`
+y `wrangler.local.jsonc`; esa ruta usa D1 y `.dev.vars`.
+
+El empaquetador anterior `package_site_worker.py` crea el paquete Sites a partir del commit,
 con los recursos privados dentro del módulo del Worker. No necesita una clave
 de OpenAI. La web publicada funciona sin la computadora del emisor.
 

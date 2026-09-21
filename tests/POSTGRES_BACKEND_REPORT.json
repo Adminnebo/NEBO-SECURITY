@@ -1,0 +1,98 @@
+{
+  "testedAt": "2026-09-21T14:23:50.314Z",
+  "implementation": "Actual application Worker/auth modules, node:crypto scrypt, pg TCP connection to PostgreSQL; isolated schema; no SQLite or mock database",
+  "postgresVersion": "PostgreSQL 17.11 on x86_64-windows, compiled by msvc-19.44.35228, 64-bit",
+  "passed": true,
+  "schemaCleanupCompleted": true,
+  "durationSeconds": 11.517,
+  "checks": [
+    {
+      "name": "real PostgreSQL TCP connection and unique isolated schema",
+      "passed": true
+    },
+    {
+      "name": "four independent connection pools initialize concurrently with one owner and marker",
+      "passed": true
+    },
+    {
+      "name": "anonymous application documents and private modules are blocked",
+      "passed": true
+    },
+    {
+      "name": "wrong and unknown-user passwords return the same generic failure",
+      "passed": true
+    },
+    {
+      "name": "login stores a hashed session token in PostgreSQL and sets secure HttpOnly cookie",
+      "passed": true
+    },
+    {
+      "name": "CSRF and exact Origin are required for admin mutations",
+      "passed": true
+    },
+    {
+      "name": "owner creates ordinary account, rejects duplicate and ignores role escalation",
+      "passed": true
+    },
+    {
+      "name": "ordinary account cannot list, create, disable, reset or escalate users",
+      "passed": true
+    },
+    {
+      "name": "closing and reopening the real connection pool preserves accounts and active sessions",
+      "passed": true
+    },
+    {
+      "name": "database transaction rolls back all writes on a SQL failure",
+      "passed": true
+    },
+    {
+      "name": "expiry in PostgreSQL immediately invalidates a session",
+      "passed": true
+    },
+    {
+      "name": "disabling revokes every session and reenabling never revives old cookies",
+      "passed": true
+    },
+    {
+      "name": "administrator password reset rejects old password and revokes sessions",
+      "passed": true
+    },
+    {
+      "name": "own password change requires current password and ends current sessions",
+      "passed": true
+    },
+    {
+      "name": "logout deletes persisted session and prevents replay",
+      "passed": true
+    },
+    {
+      "name": "real MVCC: reset waits for an in-flight locked login then revokes its inserted session",
+      "passed": true
+    },
+    {
+      "name": "real MVCC: disable waits for an in-flight locked login then revokes its inserted session",
+      "passed": true
+    },
+    {
+      "name": "real MVCC: login waits for an uncommitted password reset and rejects the old password",
+      "passed": true
+    },
+    {
+      "name": "real MVCC: login waits for an uncommitted disable and rejects the disabled account",
+      "passed": true
+    },
+    {
+      "name": "concurrent password attempts across pools obey persistent atomic account limit",
+      "passed": true
+    },
+    {
+      "name": "bootstrap marker survives reconnect and does not resurrect deleted accounts",
+      "passed": true
+    },
+    {
+      "name": "closed actual PostgreSQL pool fails closed for every private surface",
+      "passed": true
+    }
+  ]
+}

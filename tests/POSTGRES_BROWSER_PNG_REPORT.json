@@ -1,0 +1,27 @@
+{
+  "base_url": "http://localhost:50317",
+  "checks": [
+    {
+      "test": "Mobile cover and composer visible on first load without clicking",
+      "passed": true
+    },
+    {
+      "test": "Draft included by one Create click; share includes only portable PNG, secret separate",
+      "passed": true,
+      "png_bytes": 1766839,
+      "shared_files": 1
+    },
+    {
+      "test": "Fresh receiver opens PNG + key only; preview immediate; wrong key rejected; bytes exact",
+      "passed": true,
+      "source_sha256": "8dcc7953dc98d8cc7cf089d8cc1a6030e205262bf9dc638f25dc26ef74c9c3d0"
+    },
+    {
+      "test": "Trusted contact UI validates confirmation, persists alias, selects saved public identity, removes without deleting private key",
+      "passed": true
+    }
+  ],
+  "page_errors": [],
+  "access_check": "nebo_username_password",
+  "passed": true
+}

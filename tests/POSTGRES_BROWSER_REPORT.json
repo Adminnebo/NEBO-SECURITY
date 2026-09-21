@@ -1,0 +1,32 @@
+{
+  "testedAt": "2026-09-21T14:23:32.288Z",
+  "passed": true,
+  "database": "PostgreSQL",
+  "databaseVersion": "17.11",
+  "browser": "Microsoft Edge / Playwright",
+  "runtime": "v24.19.0",
+  "implementation": "Real Node HTTP server, PostgreSQL over TCP, real browser login and portable PNG reconstruction in a separate browser context",
+  "productionDeploymentTested": false,
+  "credentialsRecorded": false,
+  "durationSeconds": 77.252,
+  "suites": [
+    {
+      "script": "tests/native_auth_browser_test.py",
+      "report": "POSTGRES_BROWSER_AUTH_REPORT.json",
+      "passed": true,
+      "checks": 8
+    },
+    {
+      "script": "tests/v8_userflow_test.py",
+      "report": "POSTGRES_BROWSER_PNG_REPORT.json",
+      "passed": true,
+      "checks": 4
+    },
+    {
+      "script": "tests/native_account_scope_test.py",
+      "report": "POSTGRES_BROWSER_SCOPE_REPORT.json",
+      "passed": true,
+      "checks": 6
+    }
+  ]
+}

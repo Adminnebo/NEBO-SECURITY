@@ -1,0 +1,58 @@
+{
+  "testedAt": "2026-09-21T14:22:25.106Z",
+  "implementation": "Real Node HTTP listener and pg TCP PostgreSQL; application restart and HTTP boundary validation; isolated disposable schema",
+  "postgresVersion": "PostgreSQL 17.11 on x86_64-windows, compiled by msvc-19.44.35228, 64-bit",
+  "passed": true,
+  "schemaCleanupCompleted": true,
+  "durationSeconds": 6.353,
+  "checks": [
+    {
+      "name": "actual HTTP listener initializes real PostgreSQL in a unique test schema",
+      "passed": true
+    },
+    {
+      "name": "anonymous browser routes require login and direct private files reject access",
+      "passed": true
+    },
+    {
+      "name": "canonical Host rejects host spoofing and ignores forwarded host by default",
+      "passed": true
+    },
+    {
+      "name": "exact Origin enforcement survives forwarded host and protocol spoofing",
+      "passed": true
+    },
+    {
+      "name": "authenticated private application and HEAD replies preserve protection headers",
+      "passed": true
+    },
+    {
+      "name": "raw, encoded and malformed traversal paths never expose files",
+      "passed": true
+    },
+    {
+      "name": "oversized declared and chunked requests receive bounded 413 responses",
+      "passed": true
+    },
+    {
+      "name": "default transport ignores client CF, X-Real-IP and XFF for rate limits",
+      "passed": true
+    },
+    {
+      "name": "application HTTP restart preserves the original login session in PostgreSQL",
+      "passed": true
+    },
+    {
+      "name": "trusted Railway mode uses a single validated X-Real-IP and ignores XFF",
+      "passed": true
+    },
+    {
+      "name": "HTTP mutation requires session CSRF and logout prevents cookie replay",
+      "passed": true
+    },
+    {
+      "name": "real closed database pool makes readiness and authenticated requests fail closed",
+      "passed": true
+    }
+  ]
+}

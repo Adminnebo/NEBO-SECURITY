@@ -1,13 +1,27 @@
 {
   "name": "nebo-security-private-access",
-  "version": "11.0.0",
+  "version": "12.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "python package_site_worker.py --dev-assets",
-    "dev": "wrangler dev --config wrangler.local.jsonc --port 8789 --local-protocol https"
+    "build": "node scripts/build-assets.mjs",
+    "prestart": "npm run build",
+    "start": "node server/index.js",
+    "predev": "npm run build",
+    "dev": "node --env-file=.env server/index.js",
+    "dev:cloudflare": "npm run build && wrangler dev --config wrangler.local.jsonc --port 8789 --local-protocol https",
+    "admin:config": "node scripts/create-admin.mjs",
+    "test:postgres": "node tests/postgres_backend_test.mjs",
+    "test:http": "node tests/postgres_http_test.mjs",
+    "test:browser": "node tests/postgres_browser_test.mjs"
+  },
+  "engines": {
+    "node": ">=24 <25"
   },
   "devDependencies": {
     "wrangler": "4.135.0"
+  },
+  "dependencies": {
+    "pg": "8.23.0"
   }
 }
