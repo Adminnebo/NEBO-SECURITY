@@ -73,6 +73,11 @@ async function route(request, env) {
     return privateAsset(request, '/login.html');
   }
 
+  if (path === '/privacidad') {
+    method(request, ['GET', 'HEAD']);
+    return privateAsset(request, '/privacidad.html');
+  }
+
   if (PUBLIC_ASSETS.has(path)) {
     method(request, ['GET', 'HEAD']);
     return asset(request, env);
